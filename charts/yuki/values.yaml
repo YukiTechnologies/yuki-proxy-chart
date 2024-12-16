@@ -6,22 +6,14 @@ app:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.158
     port: 5162
     env:
-      - key: ASPNETCORE_ENVIRONMENT
-        value: Prod
-      - key: REDIS_HOST
-        value: ""
-      - key: PROXY_HOST
-        value: ""
-      - key: COMPUTE_HOST
-        value: https://prod.yukicomputing.com
-      - key: SYSTEM_HOST
-        value: https://prod.yukicomputing.com
-      - key: COMPANY_GUID
-        value: ""
-      - key: ORG_GUID
-        value: ""
-      - key: ACCOUNT_GUID
-        value: ""
+      ASPNETCORE_ENVIRONMENT: Prod
+      REDIS_HOST: ""
+      PROXY_HOST: ""
+      COMPUTE_HOST: https://prod.yukicomputing.com
+      SYSTEM_HOST: https://prod.yukicomputing.com
+      COMPANY_GUID: ""
+      ORG_GUID: ""
+      ACCOUNT_GUID: ""
   service:
     type: NodePort
     port: 5162
