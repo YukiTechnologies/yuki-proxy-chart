@@ -16,12 +16,12 @@ app:
     prometheus:
       enabled: false
 
-#hpa:
-#  enabled: true
-#  minReplicas: 4
-#  maxReplicas: 12
-#  targetCPUUtilizationPercentage: 50
-#  targetMemoryUtilizationPercentage: 50
+hpa:
+  enabled: true
+  minReplicas: 5
+  maxReplicas: 15
+  targetCPUUtilizationPercentage: 40
+  targetMemoryUtilizationPercentage: 40
 
 ingress:
   enabled: true
