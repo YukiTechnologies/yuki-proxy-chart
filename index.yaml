@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  app:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2024-12-16T11:30:37.087130974Z"
+    description: A Helm chart for Kubernetes
+    digest: ef12385f7338e41c160bf1b65920f95d1f12d200ea9b975944a321eab11bbb59
+    name: app
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/app-0.0.1/app-0.0.1.tgz
+    version: 0.0.1
+generated: "2024-12-16T11:30:37.087151155Z"
