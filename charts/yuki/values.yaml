@@ -27,9 +27,9 @@ ingress:
   enabled: true
   env: prd
   path: /
-  name: test-yuki-proxy-ingress
+  name: yuki-proxy-ingress
   className: yuki-proxy-ingress-class
   annotations:
     enabled: true
-    loadBalancerName: test-yuki-proxy-load-balancer
+    loadBalancerName: yuki-proxy-load-balancer
     certificateArn: ""

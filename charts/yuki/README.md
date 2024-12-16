@@ -9,17 +9,23 @@ Helm chart for deploying [Yuki Application Proxy].
 
 ## Installation
 
-To install the chart with the release name `proxy/yuki-proxy`:
+To install the chart with the release name `proxy/proxy`:
 
-| Parameter     |   Description   | Default |
-|:--------------|:---------------:|--------:|
-| `image`       | some wordy text |   $1600 |
-| `port`        |    centered     |     $12 |
-| zebra stripes |    are neat     |      $1 |
+| Parameter                            |       Description       | Required |
+|:-------------------------------------|:-----------------------:|---------:|
+| `app.name`                           |  The name for the app   |       no |
+| `app.container.env.REDIS_HOST`       |       Redis host        |      yes |
+| `app.container.env.PROXY_HOST`       |   Your Snowflake host   |      yes |
+| `app.container.env.COMPANY_GUID`     |    Yuki Company GUID    |      yes |
+| `app.container.env.ORG_GUID`         | Yuki Organization GUID  |      yes |
+| `app.container.env.ACCOUNT_GUID`     |    Yuki Account GUID    |      yes |
+| `ingress.name`                       |      Ingress name       |       no |
+| `ingress.className`                  | Your ingress class name |      yes |
+| `ingress.annotations.certificateArn` | Your domain certificate |      yes |
 
 
 ```bash
-helm install yuki-proxy proxy/yuki-proxy -f values.yaml
+helm install yuki-proxy proxy/proxy -f values.yaml
 ```
 
 
