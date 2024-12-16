@@ -1,0 +1,48 @@
+app:
+  name: '[ACCOUNT_NAME]'
+  group: default-app-group
+  replicaCount: 4
+  container:
+    image: [PROXY_IMAGE]
+    port: 5162
+    env:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Prod
+      - key: REDIS_HOST
+        value: [REDIS_HOST]
+      - key: PROXY_HOST
+        value: [PROXY_HOST]
+      - key: COMPUTE_HOST
+        value: https://prod.yukicomputing.com
+      - key: SYSTEM_HOST
+        value: https://prod.yukicomputing.com
+      - key: COMPANY_GUID
+        value: [COMPANY_GUID]
+      - key: ORG_GUID
+        value: [ORG_GUID]
+      - key: ACCOUNT_GUID
+        value: [ACCOUNT_GUID]
+  service:
+    type: NodePort
+    port: 5162
+    targetPort: 5162
+    prometheus:
+      enabled: false
+
+#hpa:
+#  enabled: true
+#  minReplicas: 4
+#  maxReplicas: 12
+#  targetCPUUtilizationPercentage: 50
+#  targetMemoryUtilizationPercentage: 50
+
+ingress:
+  enabled: true
+  env: prd
+  path: /
+  name: [INGRESS_NAME]
+  className: yuki-proxy-ingress-class
+  annotations:
+    enabled: true
+    loadBalancerName: [LOAD_BALANCER_NAME]
+    certificateArn: arn:aws:acm:us-east-1:406122784773:certificate/2440321f-6ee8-4868-9e40-f542c7397cd5
