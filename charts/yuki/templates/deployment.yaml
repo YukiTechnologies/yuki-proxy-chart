@@ -32,9 +32,9 @@ spec:
           ports:
             - containerPort: {{ .Values.app.container.port }}
           env:
-            {{- range .Values.app.container.env}}
-            - name: {{ .key}}
-              value: {{ .value | quote}}
+            {{- range $key, $value := $.Values.app.container.env}}
+            - name: {{ $key}}
+              value: {{ $value | quote }}
             {{- end}}
             {{- if and .Values.secret .Values.secret.aws.enabled }}
             - name: AWS_ACCESS_KEY_ID
