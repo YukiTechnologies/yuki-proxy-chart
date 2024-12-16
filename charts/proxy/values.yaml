@@ -1,5 +1,5 @@
 app:
-  name: '[ACCOUNT_NAME]'
+  name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
   container:
@@ -9,19 +9,19 @@ app:
       - key: ASPNETCORE_ENVIRONMENT
         value: Prod
       - key: REDIS_HOST
-        value: [REDIS_HOST]
+        value: ""
       - key: PROXY_HOST
-        value: [PROXY_HOST]
+        value: ""
       - key: COMPUTE_HOST
         value: https://prod.yukicomputing.com
       - key: SYSTEM_HOST
         value: https://prod.yukicomputing.com
       - key: COMPANY_GUID
-        value: [COMPANY_GUID]
+        value: ""
       - key: ORG_GUID
-        value: [ORG_GUID]
+        value: ""
       - key: ACCOUNT_GUID
-        value: [ACCOUNT_GUID]
+        value: ""
   service:
     type: NodePort
     port: 5162
@@ -40,9 +40,9 @@ ingress:
   enabled: true
   env: prd
   path: /
-  name: [INGRESS_NAME]
+  name: yuki-proxy-ingress
   className: yuki-proxy-ingress-class
   annotations:
     enabled: true
-    loadBalancerName: [LOAD_BALANCER_NAME]
+    loadBalancerName: yuki-proxy-load-balancer
     certificateArn: arn:aws:acm:us-east-1:406122784773:certificate/2440321f-6ee8-4868-9e40-f542c7397cd5
