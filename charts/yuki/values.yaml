@@ -7,13 +7,8 @@ app:
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
-      REDIS_HOST: ""
-      PROXY_HOST: ""
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
-      COMPANY_GUID: ""
-      ORG_GUID: ""
-      ACCOUNT_GUID: ""
   service:
     type: NodePort
     port: 5162
