@@ -20,6 +20,8 @@ deployment:
   spec:
     tolerations:
       enabled: false
+    affinity:
+      enabled: false
         
 hpa:
   enabled: true
