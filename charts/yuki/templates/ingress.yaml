@@ -10,7 +10,6 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}, {"HTTP":80}]'
     alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.annotations.certificateArn }}
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    # Health check
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
     alb.ingress.kubernetes.io/healthcheck-port: traffic-port
     alb.ingress.kubernetes.io/healthcheck-path: /health
@@ -19,6 +18,7 @@ metadata:
     alb.ingress.kubernetes.io/success-codes: '200'
     alb.ingress.kubernetes.io/healthy-threshold-count: '2'
     alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.route53Domain }}
   {{- end }}
 spec:
   {{- if eq .Values.ingress.env "prd" }}
@@ -46,4 +46,4 @@ spec:
                 port:
                   number: {{ .Values.app.service.port }}
   {{- end}}
-{{- end}}                      
+{{- end}}
