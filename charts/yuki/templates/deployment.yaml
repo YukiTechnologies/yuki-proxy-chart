@@ -40,6 +40,11 @@ spec:
           ports:
             - containerPort: {{ .Values.app.container.port }}
           env:
+            - name: REDIS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: redis-encryption-key
+                  key: password
             {{- range $key, $value := $.Values.app.container.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
