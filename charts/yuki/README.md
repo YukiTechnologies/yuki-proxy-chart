@@ -1,4 +1,4 @@
-# My Helm Chart
+# Yuki Proxy Helm Chart
 
 Helm chart for deploying [Yuki Application Proxy].
 
