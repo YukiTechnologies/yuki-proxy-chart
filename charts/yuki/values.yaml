@@ -35,9 +35,9 @@ ingress:
   env: prd
   path: /
   name: yuki-proxy-ingress
-  route53Domain: helm.yukicomputing.com
   className: yuki-proxy-ingress-class
   annotations:
     enabled: true
     loadBalancerName: yuki-proxy-load-balancer
+    route53Domain: helm.yukicomputing.com
     certificateArn: ""

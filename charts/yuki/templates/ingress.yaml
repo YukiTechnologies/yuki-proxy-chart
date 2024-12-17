@@ -18,7 +18,7 @@ metadata:
     alb.ingress.kubernetes.io/success-codes: '200'
     alb.ingress.kubernetes.io/healthy-threshold-count: '2'
     alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
-    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.route53Domain }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.annotations.route53Domain }}
   {{- end }}
 spec:
   {{- if eq .Values.ingress.env "prd" }}
