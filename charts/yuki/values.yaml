@@ -16,6 +16,11 @@ app:
     prometheus:
       enabled: false
 
+deployment:
+  spec:
+    tolerations:
+      enabled: false
+        
 hpa:
   enabled: true
   minReplicas: 5

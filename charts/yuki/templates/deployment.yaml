@@ -18,6 +18,14 @@ spec:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
     spec:
+      {{- if .Values.deployment.spec.tolerations.enabled }}
+      tolerations:
+        - key: {{ .Values.deployment.spec.tolerations.key }}
+          operator: {{ .Values.deployment.spec.tolerations.operator }}
+          value: {{ .Values.deployment.spec.tolerations.value }}
+          effect: {{ .Values.deployment.spec.tolerations.effect }}
+          tolerationSeconds: {{ .Values.deployment.spec.tolerations.tolerationSeconds }}
+      {{- end }}
       containers:
         - name: {{ .Values.app.name }}
           image: {{ .Values.app.container.image }}
@@ -32,10 +40,10 @@ spec:
           ports:
             - containerPort: {{ .Values.app.container.port }}
           env:
-            {{- range $key, $value := $.Values.app.container.env}}
-            - name: {{ $key}}
+            {{- range $key, $value := $.Values.app.container.env }}
+            - name: {{ $key }}
               value: {{ $value | quote }}
-            {{- end}}
+            {{- end }}
             {{- if and .Values.secret .Values.secret.aws.enabled }}
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
@@ -47,4 +55,4 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secret.aws.name }}
                   key: AWS_SECRET_ACCESS_KEY
-            {{- end}}
+            {{- end }}
