@@ -27,6 +27,8 @@ To install the chart with the release name `proxy/proxy`:
 | `deployment.spec.tolerations.enabled` | Deployment toleration config |       no |       false        |
 | `deployment.spec.affinity.enabled`    |  Deployment affinity config  |       no |       false        |
 | `hpa.enabled`                         |      Service HPA config      |       no |        true        |
+| `service_account.enabled`             |  Service account for proxy   |       no |       false        |
+| `service_account.role_arn`            |   Service account role arn   |       no |         ""         |
 
 
 ```bash
