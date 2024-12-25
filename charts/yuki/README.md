@@ -9,11 +9,12 @@ Helm chart for deploying [Yuki Application Proxy].
 
 ## Installation
 
-To install the chart with the release name `proxy/proxy`:
+To install the chart with the release name `yuki/proxy`:
 
 | Parameter                             |         Description          | Required |      Default       |
 |:--------------------------------------|:----------------------------:|---------:|:------------------:|
 | `app.name`                            |     The name for the app     |       no |     yuki-proxy     |
+| `app.namespace`                       |  The namespace for the app   |       no |     yuki-proxy     |
 | `app.container.env.REDIS_HOST`        |          Redis host          |      yes |        none        |
 | `app.container.env.PROXY_HOST`        |     Your Snowflake host      |      yes |        none        |
 | `app.container.env.COMPANY_GUID`      |      Yuki Company GUID       |      yes |        none        |
@@ -32,7 +33,8 @@ To install the chart with the release name `proxy/proxy`:
 
 
 ```bash
-helm install yuki-proxy proxy/proxy -f values.yaml
+helm repo add yuki https://yukitechnologies.github.io/yuki-proxy-chart
+helm install yuki-proxy yuki/proxy -f values.yaml
 ```
 
 
