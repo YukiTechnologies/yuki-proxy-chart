@@ -1,6 +1,5 @@
 app:
   name: 'yuki-proxy'
-  namespace: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
   container:
