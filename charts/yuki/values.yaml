@@ -23,7 +23,7 @@ deployment:
       enabled: false
     affinity:
       enabled: false
-        
+
 hpa:
   enabled: true
   minReplicas: 5
@@ -45,3 +45,6 @@ ingress:
     loadBalancerName: yuki-proxy-load-balancer
     route53Domain: helm.yukicomputing.com
     certificateArn: ""
+
+affinity: {}
+tolerations: []

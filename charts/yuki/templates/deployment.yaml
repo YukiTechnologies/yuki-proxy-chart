@@ -19,104 +19,13 @@ spec:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
     spec:
-      {{- if .Values.deployment.spec.tolerations.enabled }}
-      tolerations:
-        - key: {{ .Values.deployment.spec.tolerations.key }}
-          operator: {{ .Values.deployment.spec.tolerations.operator }}
-          value: {{ .Values.deployment.spec.tolerations.value }}
-          effect: {{ .Values.deployment.spec.tolerations.effect }}
-          tolerationSeconds: {{ .Values.deployment.spec.tolerations.tolerationSeconds }}
-      {{- end }}
-      {{- if .Values.deployment.spec.affinity.enabled }}
+      {{- with .Values.affinity }}
       affinity:
-        {{- if .Values.deployment.spec.affinity.nodeAffinity }}
-        nodeAffinity:
-          {{- if .Values.deployment.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                {{- range .Values.deployment.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.matchExpressions }}
-                  - key: {{ .key }}
-                    operator: {{ .operator }}
-                    values: [{{ .values | join ", " }}]
-                {{- end }}
-          {{- end }}
-          {{- if .Values.deployment.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-          preferredDuringSchedulingIgnoredDuringExecution:
-            {{- range .Values.deployment.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-            - weight: {{ .weight }}
-              preference:
-                matchExpressions:
-                  {{- range .preference.matchExpressions }}
-                  - key: {{ .key }}
-                    operator: {{ .operator }}
-                    values: [{{ .values | join ", " }}]
-                  {{- end }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
-        {{- if .Values.deployment.spec.affinity.podAffinity }}
-        podAffinity:
-          {{- if .Values.deployment.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-            {{- range .Values.deployment.spec.affinity.podAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
-            - labelSelector:
-                matchExpressions:
-                  {{- range .labelSelector.matchExpressions }}
-                  - key: {{ .key }}
-                    operator: {{ .operator }}
-                    values: [{{ .values | join ", " }}]
-                  {{- end }}
-              topologyKey: {{ .topologyKey }}
-            {{- end }}
-          {{- end }}
-          {{- if .Values.deployment.spec.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-          preferredDuringSchedulingIgnoredDuringExecution:
-            {{- range .Values.deployment.spec.affinity.podAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-            - weight: {{ .weight }}
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    {{- range .podAffinityTerm.labelSelector.matchExpressions }}
-                    - key: {{ .key }}
-                      operator: {{ .operator }}
-                      values: [{{ .values | join ", " }}]
-                    {{- end }}
-                topologyKey: {{ .podAffinityTerm.topologyKey }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
-        {{- if .Values.deployment.spec.affinity.podAntiAffinity }}
-        podAntiAffinity:
-          {{- if .Values.deployment.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
-          requiredDuringSchedulingIgnoredDuringExecution:
-            {{- range .Values.deployment.spec.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution }}
-            - labelSelector:
-                matchExpressions:
-                  {{- range .labelSelector.matchExpressions }}
-                  - key: {{ .key }}
-                    operator: {{ .operator }}
-                    values: [{{ .values | join ", " }}]
-                  {{- end }}
-              topologyKey: {{ .topologyKey }}
-            {{- end }}
-          {{- end }}
-          {{- if .Values.deployment.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-          preferredDuringSchedulingIgnoredDuringExecution:
-            {{- range .Values.deployment.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution }}
-            - weight: {{ .weight }}
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    {{- range .podAffinityTerm.labelSelector.matchExpressions }}
-                    - key: {{ .key }}
-                      operator: {{ .operator }}
-                      values: [{{ .values | join ", " }}]
-                    {{- end }}
-                topologyKey: {{ .podAffinityTerm.topologyKey }}
-            {{- end }}
-          {{- end }}
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Values.app.name }}
