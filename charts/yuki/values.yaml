@@ -1,6 +1,6 @@
 app:
   name: 'yuki-proxy'
-  namespace: yuki-proxy
+  namespace: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
   container:
@@ -30,6 +30,9 @@ hpa:
   maxReplicas: 15
   targetCPUUtilizationPercentage: 40
   targetMemoryUtilizationPercentage: 40
+
+serviceAccount:
+  enabled: false
 
 ingress:
   enabled: true
