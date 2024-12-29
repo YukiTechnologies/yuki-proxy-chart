@@ -33,13 +33,6 @@ spec:
           resources:
             {{- toYaml . | nindent 4 }}
           {{- end }}
-          resources:
-            requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .Values.app.container.port }}
