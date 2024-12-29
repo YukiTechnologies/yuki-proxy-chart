@@ -29,6 +29,10 @@ spec:
       containers:
         - name: {{ .Values.app.name }}
           image: {{ .Values.app.container.image }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 4 }}
+          {{- end }}
           resources:
             requests:
               cpu: "250m"
