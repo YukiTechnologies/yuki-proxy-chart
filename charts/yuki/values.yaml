@@ -16,13 +16,6 @@ app:
     prometheus:
       enabled: false
 
-deployment:
-  spec:
-    tolerations:
-      enabled: false
-    affinity:
-      enabled: false
-
 hpa:
   enabled: true
   minReplicas: 5
@@ -30,20 +23,16 @@ hpa:
   targetCPUUtilizationPercentage: 40
   targetMemoryUtilizationPercentage: 40
 
-serviceAccount:
-  enabled: false
-
 ingress:
-  enabled: true
-  env: prd
-  path: /
-  name: yuki-proxy-ingress
-  className: yuki-proxy-ingress-class
-  annotations:
-    enabled: true
-    loadBalancerName: yuki-proxy-load-balancer
-    route53Domain: helm.yukicomputing.com
-    certificateArn: ""
+  enabled: false
+    
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
 
 affinity: {}
 tolerations: []

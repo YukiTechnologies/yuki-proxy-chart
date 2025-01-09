@@ -8,7 +8,6 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if eq .Values.ingress.env "prd" }}
   ingressClassName: {{ .Values.ingress.className }}
   rules:
     - http:
@@ -20,17 +19,4 @@ spec:
                 name: {{ .Values.app.name }}
                 port:
                   number: {{ .Values.app.service.port }}
-  {{- else if eq .Values.ingress.env "dev"}}
-  rules:
-    - host: {{ .Values.ingress.host }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ .Values.app.name }}
-                port:
-                  number: {{ .Values.app.service.port }}
-  {{- end}}
 {{- end}}
