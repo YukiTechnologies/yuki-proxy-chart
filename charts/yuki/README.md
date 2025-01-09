@@ -14,7 +14,6 @@ To install the chart with the release name `yuki/proxy`:
 | Parameter                             |         Description          | Required |      Default       |
 |:--------------------------------------|:----------------------------:|---------:|:------------------:|
 | `app.name`                            |     The name for the app     |       no |     yuki-proxy     |
-| `app.namespace`                       |  The namespace for the app   |       no |     yuki-proxy     |
 | `app.container.env.REDIS_HOST`        |          Redis host          |      yes |        none        |
 | `app.container.env.PROXY_HOST`        |     Your Snowflake host      |      yes |        none        |
 | `ingress.enabled`                     |        Ingress config        |       no |        true        |
