@@ -31,7 +31,7 @@ spec:
           image: {{ .Values.app.container.image }}
           {{- with .Values.resources }}
           resources:
-            {{- toYaml . | nindent 4 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           imagePullPolicy: IfNotPresent
           ports:
