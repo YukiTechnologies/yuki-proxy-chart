@@ -9,6 +9,7 @@ app:
       ASPNETCORE_ENVIRONMENT: Prod
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
+      SERILOG_DATADOG_ENABLED: true
   service:
     type: NodePort
     port: 5162
