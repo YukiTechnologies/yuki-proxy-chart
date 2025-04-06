@@ -3,6 +3,15 @@ entries:
   proxy:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-04-06T11:29:37.385798251Z"
+    description: A Helm chart Yuki Proxy Deployment
+    digest: 0ef3a9741c32d7363ff3654b14a4945f7f057157e934604cce4455f598f8fa6e
+    name: proxy
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/proxy-0.0.30/proxy-0.0.30.tgz
+    version: 0.0.30
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-04-06T10:10:37.130920407Z"
     description: A Helm chart Yuki Proxy Deployment
     digest: a55e28d47cbd020114a8fb08c95e4f508c6941b499fbb8e3260d1f09ae88c14f
@@ -262,4 +271,4 @@ entries:
     urls:
     - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/proxy-0.0.1/proxy-0.0.1.tgz
     version: 0.0.1
-generated: "2025-04-06T10:10:37.1312122Z"
+generated: "2025-04-06T11:29:37.38601703Z"
