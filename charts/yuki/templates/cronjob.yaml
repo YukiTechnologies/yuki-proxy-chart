@@ -4,13 +4,17 @@ metadata:
   name: system-monitoring-job
 spec:
   schedule: "*/1 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 30
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
         spec:
           containers:
             - name: system-monitoring-job
-              image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/system-monitoring-job:0.0.4
+              image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/system-monitoring-job:0.0.3
               env:
                 - name: SYSTEM_URL
                   value: "https://prod.yukicomputing.com/health"
@@ -24,4 +28,12 @@ spec:
                 - name: {{ $key }}
                   value: {{ $value | quote }}
                 {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           restartPolicy: OnFailure
