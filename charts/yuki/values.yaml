@@ -3,7 +3,7 @@ app:
   group: default-app-group
   replicaCount: 4
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.208
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.211
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
