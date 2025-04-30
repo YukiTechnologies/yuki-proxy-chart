@@ -18,6 +18,7 @@ spec:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
     spec:
+      serviceAccountName: {{ .Values.app.serviceAccountName | default "default" }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

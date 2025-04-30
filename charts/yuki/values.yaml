@@ -2,14 +2,17 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
+  serviceAccountName: 'yuki-proxy-SA'
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.211
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.237
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
       SERILOG_DATADOG_ENABLED: true
+      PROXY_HOST: REQUIRED
+      REDIS_HOST: REQUIRED
   service:
     type: NodePort
     port: 5162
