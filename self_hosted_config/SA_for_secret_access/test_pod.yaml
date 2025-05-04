@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secrets-test
+  namespace: test-proxy
+spec:
+  serviceAccountName: yuki-proxy-sa
+  containers:
+  - name: aws-cli
+    image: amazonlinux
+    command: [ "sleep", "3600" ]

@@ -2,7 +2,6 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
-  serviceAccountName: 'yuki-proxy-SA'
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.237
     port: 5162
@@ -11,14 +10,18 @@ app:
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
       SERILOG_DATADOG_ENABLED: true
-      PROXY_HOST: REQUIRED
-      REDIS_HOST: REQUIRED
+      PROXY_HOST: # REQUIRED
+      REDIS_HOST: # REQUIRED
   service:
     type: NodePort
     port: 5162
     targetPort: 5162
     prometheus:
       enabled: false
+
+serviceAccount:
+  roleARN: arn:aws:iam::406122784773:role/yuki-proxy-secret-access-role
+  serviceAccountName: 'yuki-proxy-sa'
 
 hpa:
   enabled: true
