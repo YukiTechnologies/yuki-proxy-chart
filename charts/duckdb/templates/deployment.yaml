@@ -1,0 +1,85 @@
+{{- if .Values.app.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: yuki-duckdb
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.name }}
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app: {{ .Values.app.name }}
+    group: {{ .Values.app.group }}
+spec:
+  replicas: {{ .Values.app.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      namespace: yuki-duckdb
+      labels:
+        app: {{ .Values.app.name }}
+        group: {{ .Values.app.group }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: duckdbrc-setup
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp /secret/.duckdbrc /duckdb-home/.duckdbrc
+          volumeMounts:
+            - name: duckdb-home
+              mountPath: /duckdb-home
+            - name: duckdbrc
+              mountPath: /secret
+              readOnly: true
+      containers:
+        - name: {{ .Values.app.name }}
+          image: {{ .Values.app.container.image }}
+          restart:
+          tty: true
+          command:
+            - /bin/bash
+            - -c
+            - /app/duckdb
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.app.container.port }}
+              name: duckdb-http
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: duckdb-http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: duckdb-http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          volumeMounts:
+            - name: duckdb-home
+              mountPath: /home/duckdb
+      volumes:
+        - name: duckdb-home
+          emptyDir: { }
+        - name: duckdbrc
+          secret:
+            secretName: yuki-duckdb-secret
+{{- end }}
