@@ -1,0 +1,31 @@
+app:
+  enabled: true
+  name: 'yuki-duckdb'
+  group: default-app-group
+  replicaCount: 1
+  container:
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:1
+    port: 8080
+
+  service:
+    port: 80
+    prometheus:
+      enabled: false
+
+  secret:
+    name: yuki-duckdb-secret
+    key: duckdb-api-key
+
+serviceAccount:
+  roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
+  serviceAccountName: 'yuki-duckdb-sa'
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+
+affinity: {}
+tolerations: []
