@@ -19,9 +19,8 @@ app:
     prometheus:
       enabled: false
 
-#serviceAccount:
-#  roleARN: arn:aws:iam::406122784773:role/yuki-proxy-secret-access-role
-#  serviceAccountName: 'yuki-proxy-sa'
+serviceAccount:
+  enabled: false
 
 hpa:
   enabled: true
