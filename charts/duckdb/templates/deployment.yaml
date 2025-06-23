@@ -30,29 +30,9 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      initContainers:
-        - name: duckdbrc-setup
-          image: busybox
-          command:
-            - /bin/sh
-            - -c
-            - |
-              cp /secret/.duckdbrc /duckdb-home/.duckdbrc
-          volumeMounts:
-            - name: duckdb-home
-              mountPath: /duckdb-home
-            - name: duckdbrc
-              mountPath: /secret
-              readOnly: true
       containers:
         - name: {{ .Values.app.name }}
           image: {{ .Values.app.container.image }}
-          restart:
-          tty: true
-          command:
-            - /bin/bash
-            - -c
-            - /app/duckdb
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -73,13 +53,4 @@ spec:
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
-          volumeMounts:
-            - name: duckdb-home
-              mountPath: /home/duckdb
-      volumes:
-        - name: duckdb-home
-          emptyDir: { }
-        - name: duckdbrc
-          secret:
-            secretName: yuki-duckdb-secret
 {{- end }}

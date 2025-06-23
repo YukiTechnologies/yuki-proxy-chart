@@ -4,8 +4,8 @@ app:
   group: default-app-group
   replicaCount: 1
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:1
-    port: 8080
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
+    port: 80
 
   service:
     port: 80
