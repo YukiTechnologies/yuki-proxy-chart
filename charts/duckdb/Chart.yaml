@@ -1,5 +1,5 @@
 apiVersion: v2
 name: yuki-duckdb
 description: A Helm chart for Yuki duckdb deployment
-version: 0.0.1
+version: 0.0.2
 appVersion: "1.16.0"
