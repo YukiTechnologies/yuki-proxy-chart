@@ -337,6 +337,15 @@ entries:
   yuki-duckdb:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-07-02T15:04:12.87238816Z"
+    description: A Helm chart for Yuki duckdb deployment
+    digest: 5218d910d53a9e252c414301098c89595e590030055c5999904b83be7621d9c8
+    name: yuki-duckdb
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/yuki-duckdb-0.0.2/yuki-duckdb-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-05-11T09:22:06.018856188Z"
     description: A Helm chart for Yuki duckdb deployment
     digest: bf0c5e188c5366bcaf418dd9bb6a77e69996371c8743e305a0e6f8960c995b81
@@ -344,4 +353,4 @@ entries:
     urls:
     - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/yuki-duckdb-0.0.1/yuki-duckdb-0.0.1.tgz
     version: 0.0.1
-generated: "2025-06-22T11:30:07.644643568Z"
+generated: "2025-07-02T15:04:12.872468041Z"
