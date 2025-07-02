@@ -14,7 +14,7 @@ spec:
         spec:
           containers:
             - name: system-monitoring-job
-              image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/system-monitoring-job:0.0.3
+              image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/system-monitoring-job:0.0.15
               env:
                 - name: SYSTEM_URL
                   value: "https://prod.yukicomputing.com/health"
