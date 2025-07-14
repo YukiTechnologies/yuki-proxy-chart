@@ -9,7 +9,7 @@ metadata:
     group: {{ .Values.app.group }}
 spec:
   {{- with .Values.app.replicaCount }}
-  {{- if not (.Values.hpa).enabled }}
+  {{- if not ($.Values.hpa).enabled }}
   replicas: {{ . }}
   {{- end }}
   {{- end }}
