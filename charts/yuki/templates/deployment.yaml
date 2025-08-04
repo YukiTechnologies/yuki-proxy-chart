@@ -22,7 +22,7 @@ spec:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
       annotations:
-        ad.datadoghq.com/my-container.tags: '["image_tag:{{ tpl .Values.app.container.image | splitList ":" | last }}"]'
+        ad.datadoghq.com/my-container.tags: '["image_tag:{{ tpl .Values.app.container.image . | splitList ":" | last }}"]'
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
       {{- with .Values.affinity }}
@@ -45,7 +45,7 @@ spec:
             - containerPort: {{ .Values.app.container.port }}
           env:
             - name: PROXY_VERSION
-              value: "{{ tpl .Values.app.container.image | splitList ":" | last }}"
+              value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
             - name: REDIS_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
