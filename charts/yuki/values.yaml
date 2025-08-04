@@ -22,6 +22,9 @@ app:
 serviceAccount:
   enabled: false
 
+redisSecret:
+  create: false
+
 hpa:
   enabled: true
   minReplicas: 5
@@ -31,7 +34,7 @@ hpa:
 
 ingress:
   enabled: false
-    
+
 resources:
   requests:
     memory: "1Gi"
@@ -40,5 +43,5 @@ resources:
     memory: "1Gi"
     cpu: "1000m"
 
-affinity: {}
-tolerations: []
+affinity: { }
+tolerations: [ ]
