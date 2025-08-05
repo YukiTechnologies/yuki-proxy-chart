@@ -1,7 +1,13 @@
+{{- $endpoints := list 
+  (dict "name" "system" "url" "https://prod.yukicomputing.com/health" "redisKey" "yuki-system-monitoring") 
+  (dict "name" "compute" "url" "https://prod.yukicomputing.com/compute/health" "redisKey" "yuki-compute-monitoring") 
+}}
+{{- range $endpoint := $endpoints }}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: system-monitoring-job
+  name: {{ $endpoint.name }}-monitoring-job
 spec:
   schedule: "*/1 * * * *"
   concurrencyPolicy: Forbid
@@ -12,28 +18,50 @@ spec:
     spec:
       template:
         spec:
+          initContainers:
+            - name: curl-{{ $endpoint.name }}
+              image: alpine/curl
+              command: [ "/bin/sh" ]
+              args:
+                - "-c"
+                - |
+                  if curl -f --max-time 30 --retry 3 --retry-delay 1 {{ $endpoint.url }}; then
+                    echo 'true' > /data/result.txt
+                  else
+                    echo 'false' > /data/result.txt
+                  fi
+              volumeMounts:
+                - name: data-dir
+                  mountPath: "/data"
           containers:
-            - name: system-monitoring-job
-              image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/system-monitoring-job:0.0.16
+            - name: set-{{ $endpoint.name }}-result
+              image: redis:7-alpine
+              command: [ "/bin/sh" ]
+              args:
+                - "-c"
+                - |
+                  RESULT=$(cat /data/result.txt)
+                  redis-cli -h $REDIS_HOST -p ${REDIS_PORT:-6379} set $REDIS_KEY $RESULT EX 60
+              volumeMounts:
+                - name: data-dir
+                  mountPath: /data
               env:
-                - name: SYSTEM_URL
-                  value: "https://prod.yukicomputing.com/health"
-                - name: COMPUTE_URL
-                  value: "https://prod.yukicomputing.com/compute/health"
-                - name: SYSTEM_REDIS_KEY
-                  value: "yuki-system-monitoring"
-                - name: COMPUTE_REDIS_KEY
-                  value: "yuki-compute-monitoring"
+                - name: REDIS_KEY
+                  value: {{ $endpoint.redisKey | quote }}
                 {{- range $key, $value := $.Values.app.container.env }}
                 - name: {{ $key }}
                   value: {{ $value | quote }}
                 {{- end }}
-          {{- with .Values.affinity }}
+          {{- with $.Values.affinity }}
           affinity:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.tolerations }}
+          {{- with $.Values.tolerations }}
           tolerations:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           restartPolicy: OnFailure
+          volumes:
+            - name: data-dir
+              emptyDir: { }
+{{- end }}
