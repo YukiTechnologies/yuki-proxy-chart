@@ -25,11 +25,15 @@ spec:
               args:
                 - "-c"
                 - |
+                  echo "Starting health check for {{ $endpoint.name }} endpoint: {{ $endpoint.url }}"
                   if curl -f --max-time 30 --retry 3 --retry-delay 1 {{ $endpoint.url }}; then
+                    echo "✅ Health check PASSED for {{ $endpoint.name }}"
                     echo 'true' > /data/result.txt
                   else
+                    echo "❌ Health check FAILED for {{ $endpoint.name }}"
                     echo 'false' > /data/result.txt
                   fi
+                  echo "Health check result written to /data/result.txt"
               volumeMounts:
                 - name: data-dir
                   mountPath: "/data"
@@ -40,8 +44,16 @@ spec:
               args:
                 - "-c"
                 - |
+                  echo "Reading health check result for {{ $endpoint.name }}..."
                   RESULT=$(cat /data/result.txt)
-                  redis-cli -h $REDIS_HOST -p ${REDIS_PORT:-6379} set $REDIS_KEY $RESULT EX 60
+                  echo "Result: $RESULT"
+                  echo "Setting Redis key '$REDIS_KEY' to '$RESULT' with 60s expiry..."
+                  if redis-cli -h $REDIS_HOST -p ${REDIS_PORT:-6379} set $REDIS_KEY $RESULT EX 60; then
+                    echo "✅ Successfully updated Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
+                  else
+                    echo "❌ Failed to update Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
+                    exit 1
+                  fi
               volumeMounts:
                 - name: data-dir
                   mountPath: /data
