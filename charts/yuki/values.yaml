@@ -23,7 +23,7 @@ serviceAccount:
   enabled: false
 
 redisSecret:
-  create: false
+  create: true
 
 hpa:
   enabled: true
