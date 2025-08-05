@@ -3,7 +3,7 @@ entries:
   app:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-08-04T18:58:45.503347+03:00"
+    created: "2025-08-05T08:14:00.861367+03:00"
     description: A Helm chart for Kubernetes
     digest: 52c3c7ef874bf903170ab8798116cefb6146d1772e89c51d7120d189ad4b2c56
     name: app
@@ -13,7 +13,16 @@ entries:
   proxy:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-08-04T18:58:45.503287+03:00"
+    created: "2025-08-05T08:14:00.861298+03:00"
+    description: A Helm chart Yuki Proxy Deployment
+    digest: 6498241c35f019ae5892c579bf5678e081b96fc4f5c6642c969231e067bcf64f
+    name: proxy
+    urls:
+    - https://yukitechnologies.github.io/yuki-proxy-chart/proxy-0.0.43-alpha1754370818.tgz
+    version: 0.0.43-alpha1754370818
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-08-05T08:14:00.861134+03:00"
     description: A Helm chart Yuki Proxy Deployment
     digest: 891596703fab53620a8eaf63e3ef82114917d54367ff6252d72817ce3c86d760
     name: proxy
@@ -22,7 +31,7 @@ entries:
     version: 0.0.43-alpha1754323084
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-08-04T18:58:45.503058+03:00"
+    created: "2025-08-05T08:14:00.860981+03:00"
     description: A Helm chart Yuki Proxy Deployment
     digest: 3f2c85a6386b22075447e5124436c01bf9066b4ab522cf108bd2461cc6de004e
     name: proxy
@@ -31,11 +40,11 @@ entries:
     version: 0.0.43-alpha1754306000
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-08-04T18:58:45.502924+03:00"
+    created: "2025-08-05T08:14:00.860816+03:00"
     description: A Helm chart Yuki Proxy Deployment
     digest: 27275039ae2718ca714ff5c70af1994c01ecbaa957a78132d76fda9aecf03921
     name: proxy
     urls:
     - https://yukitechnologies.github.io/yuki-proxy-chart/proxy-0.0.43-1754307817.tgz
     version: 0.0.43-1754307817
-generated: "2025-08-04T18:58:45.502464+03:00"
+generated: "2025-08-05T08:14:00.860355+03:00"
