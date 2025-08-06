@@ -48,7 +48,7 @@ spec:
                   RESULT=$(cat /data/result.txt)
                   echo "Result: $RESULT"
                   echo "Setting Redis key '$REDIS_KEY' to '$RESULT' with 60s expiry..."
-                  if redis-cli -h $REDIS_HOST -p ${REDIS_PORT:-6379} set $REDIS_KEY $RESULT EX 60; then
+                  if redis-cli -c -h $REDIS_HOST -p ${REDIS_PORT:-6379} set $REDIS_KEY $RESULT EX 60; then
                     echo "✅ Successfully updated Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
                   else
                     echo "❌ Failed to update Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
