@@ -18,7 +18,7 @@ entries:
     digest: 8d78482184f0967d679f079bf282d35051403c876f16ad37bbcb5537eddc7dbf
     name: proxy
     urls:
-    - https://yukitechnologies.github.io/yuki-proxy-chart/proxy-0.0.47-rc.1.tgz
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/v0.0.47-rc.1/proxy-0.0.47-rc.1.tgz
     version: 0.0.47-rc.1
   - apiVersion: v2
     appVersion: 1.16.0
