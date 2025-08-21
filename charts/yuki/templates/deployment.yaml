@@ -67,3 +67,20 @@ spec:
                   name: {{ .Values.secret.aws.name }}
                   key: AWS_SECRET_ACCESS_KEY
             {{- end }}
+            {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.users }}
+            {{- range $user := .Values.externalSecrets.users }}
+            - name: SNOWFLAKE_USER_{{ upper $user.username }}_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: snowflake-user-{{ $user.username }}
+                  key: private_key
+            {{- if $user.passphraseProperty }}
+            - name: SNOWFLAKE_USER_{{ upper $user.username }}_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: snowflake-user-{{ $user.username }}
+                  key: passphrase
+            {{- end }}
+            {{- end }}
+            {{- end }}
+
