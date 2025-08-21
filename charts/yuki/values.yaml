@@ -40,6 +40,8 @@ externalSecrets:
     # IAM role ARN for accessing secrets (for self-hosted deployments)
     # In SaaS mode, this will use the serviceAccount.roleARN
     roleArn: ""
+    # Optional: External ID for additional security when assuming cross-account roles
+    externalID: ""
   
   # Snowflake user credentials configuration
   users: []
