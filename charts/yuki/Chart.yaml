@@ -1,5 +1,10 @@
 apiVersion: v2
 name: proxy
 description: A Helm chart Yuki Proxy Deployment
-version: 0.0.47
+version: 0.0.48
 appVersion: "1.16.0"
+dependencies:
+  - name: external-secrets
+    version: "0.19.1"
+    repository: https://charts.external-secrets.io
+    condition: externalSecrets.operator.enabled

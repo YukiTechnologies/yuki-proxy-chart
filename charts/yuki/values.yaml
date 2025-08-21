@@ -25,6 +25,37 @@ serviceAccount:
 redisSecret:
   create: true
 
+# External Secrets configuration for Snowflake user credentials
+externalSecrets:
+  enabled: false
+  # Deploy external-secrets operator (for self-hosted mode)
+  operator:
+    enabled: false
+  # SecretStore configuration
+  secretStore:
+    # Choose either 'secretsmanager' or 'parameterstore'
+    type: secretsmanager
+    # AWS region for the SecretStore
+    region: us-east-1
+    # IAM role ARN for accessing secrets (for self-hosted deployments)
+    # In SaaS mode, this will use the serviceAccount.roleARN
+    roleArn: ""
+    # Optional: External ID for additional security when assuming cross-account roles
+    externalID: ""
+  
+  # Snowflake user credentials configuration
+  users: []
+  # Example configuration:
+  # users:
+  #   - username: user1
+  #     secretKey: /snowflake/users/user1/credentials  # Path to secret in AWS
+  #     privateKeyProperty: private_key  # Property name for private key
+  #     passphraseProperty: passphrase   # Optional: property name for passphrase
+  #   - username: user2
+  #     secretKey: /snowflake/users/user2/credentials
+  #     privateKeyProperty: private_key
+  #     # No passphrase for user2
+
 hpa:
   enabled: true
   minReplicas: 5
@@ -44,3 +75,10 @@ resources:
 
 affinity: { }
 tolerations: [ ]
+
+# Configuration for external-secrets subchart (when operator.enabled = true)
+external-secrets:
+  installCRDs: true
+  replicaCount: 1
+  serviceAccount:
+    create: true
