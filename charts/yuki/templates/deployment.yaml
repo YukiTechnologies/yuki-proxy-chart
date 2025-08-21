@@ -72,13 +72,13 @@ spec:
             - name: SNOWFLAKE_USER_{{ upper $user.username }}_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
-                  name: snowflake-user-{{ $user.username }}
+                  name: snowflake-user-{{ $user.username | replace "_" "-" }}
                   key: private_key
             {{- if $user.passphraseProperty }}
             - name: SNOWFLAKE_USER_{{ upper $user.username }}_PASSPHRASE
               valueFrom:
                 secretKeyRef:
-                  name: snowflake-user-{{ $user.username }}
+                  name: snowflake-user-{{ $user.username | replace "_" "-" }}
                   key: passphrase
             {{- end }}
             {{- end }}
