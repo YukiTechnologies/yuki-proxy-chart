@@ -138,6 +138,9 @@ jobs:
       - name: Update Helm repository index (non-main branches)
         if: steps.version.outputs.is_main == 'false'
         run: |
+          # Stash any local changes
+          git stash push -m "Stash pre-release version changes"
+          
           # Checkout gh-pages branch
           git fetch origin gh-pages:gh-pages
           git checkout gh-pages
@@ -159,5 +162,8 @@ jobs:
           
           # Switch back to original branch
           git checkout -
+          
+          # Restore stashed changes (optional, since this is a temporary CI environment)
+          git stash pop || echo "No stash to pop"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
