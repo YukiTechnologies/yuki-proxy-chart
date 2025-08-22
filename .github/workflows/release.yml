@@ -134,3 +134,30 @@ jobs:
             .cr-release-packages/*.tgz
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Update Helm repository index (non-main branches)
+        if: steps.version.outputs.is_main == 'false'
+        run: |
+          # Checkout gh-pages branch
+          git fetch origin gh-pages:gh-pages
+          git checkout gh-pages
+          
+          # Download the packaged chart from the release
+          PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
+          TAG_NAME="proxy-${PRERELEASE_VERSION}"
+          
+          # Download the chart file
+          gh release download "$TAG_NAME" --pattern "*.tgz"
+          
+          # Update the Helm repository index
+          helm repo index . --url https://yukitechnologies.github.io/yuki-proxy-chart --merge index.yaml
+          
+          # Commit and push the updated index
+          git add index.yaml "proxy-${PRERELEASE_VERSION}.tgz"
+          git commit -m "Add pre-release ${PRERELEASE_VERSION} to Helm repository"
+          git push origin gh-pages
+          
+          # Switch back to original branch
+          git checkout -
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
