@@ -39,7 +39,7 @@ spec:
                   {{- if eq $endpoint.name "system" }}
                   value: "{{ $.Values.app.container.env.SYSTEM_HOST }}/health"
                   {{- else if eq $endpoint.name "compute" }}
-                  value: "{{ $.Values.app.container.env.COMPUTE_HOST }}/health"
+                  value: "{{ $.Values.app.container.env.COMPUTE_HOST }}/compute/health"
                   {{- end }}
               volumeMounts:
                 - name: data-dir
