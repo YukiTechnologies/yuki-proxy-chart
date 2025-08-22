@@ -148,15 +148,32 @@ jobs:
           # Download the packaged chart from the release
           PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
           TAG_NAME="proxy-${PRERELEASE_VERSION}"
+          CHART_FILE="proxy-${PRERELEASE_VERSION}.tgz"
           
-          # Download the chart file
-          gh release download "$TAG_NAME" --pattern "*.tgz"
+          # Only download if the chart doesn't already exist
+          if [ ! -f "$CHART_FILE" ]; then
+            gh release download "$TAG_NAME" --pattern "*.tgz"
+          fi
           
-          # Update the Helm repository index
-          helm repo index . --url https://yukitechnologies.github.io/yuki-proxy-chart --merge index.yaml
+          # Create a temporary directory for just this chart to avoid duplicates
+          mkdir -p temp_charts
+          cp "$CHART_FILE" temp_charts/
+          
+          # Generate index only for the new chart
+          helm repo index temp_charts --url https://yukitechnologies.github.io/yuki-proxy-chart
+          
+          # Merge the new entry into the existing index
+          if [ -f index.yaml ]; then
+            helm repo index . --url https://yukitechnologies.github.io/yuki-proxy-chart --merge temp_charts/index.yaml
+          else
+            cp temp_charts/index.yaml index.yaml
+          fi
+          
+          # Clean up
+          rm -rf temp_charts
           
           # Commit and push the updated index
-          git add index.yaml "proxy-${PRERELEASE_VERSION}.tgz"
+          git add index.yaml "$CHART_FILE"
           git commit -m "Add pre-release ${PRERELEASE_VERSION} to Helm repository"
           git push origin gh-pages
           
