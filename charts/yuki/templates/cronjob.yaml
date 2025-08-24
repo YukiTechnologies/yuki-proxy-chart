@@ -1,6 +1,6 @@
 {{- $endpoints := list 
-  (dict "name" "system" "url" "https://prod.yukicomputing.com/health" "redisKey" "yuki-system-monitoring") 
-  (dict "name" "compute" "url" "https://prod.yukicomputing.com/compute/health" "redisKey" "yuki-compute-monitoring") 
+  (dict "name" "system" "redisKey" "yuki-system-monitoring") 
+  (dict "name" "compute" "redisKey" "yuki-compute-monitoring") 
 }}
 {{- range $endpoint := $endpoints }}
 ---
@@ -25,8 +25,8 @@ spec:
               args:
                 - "-c"
                 - |
-                  echo "Starting health check for {{ $endpoint.name }} endpoint: {{ $endpoint.url }}"
-                  if curl -f --max-time 30 --retry 3 --retry-delay 1 {{ $endpoint.url }}; then
+                  echo "Starting health check for {{ $endpoint.name }} endpoint: $TARGET_URL"
+                  if curl -f --max-time 30 --retry 3 --retry-delay 1 "$TARGET_URL"; then
                     echo "✅ Health check PASSED for {{ $endpoint.name }}"
                     echo 'true' > /data/result.txt
                   else
@@ -34,6 +34,13 @@ spec:
                     echo 'false' > /data/result.txt
                   fi
                   echo "Health check result written to /data/result.txt"
+              env:
+                - name: TARGET_URL
+                  {{- if eq $endpoint.name "system" }}
+                  value: "{{ $.Values.app.container.env.SYSTEM_HOST }}/health"
+                  {{- else if eq $endpoint.name "compute" }}
+                  value: "{{ $.Values.app.container.env.COMPUTE_HOST }}/compute/health"
+                  {{- end }}
               volumeMounts:
                 - name: data-dir
                   mountPath: "/data"

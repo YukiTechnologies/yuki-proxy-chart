@@ -69,13 +69,13 @@ spec:
             {{- end }}
             {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.users }}
             {{- range $user := .Values.externalSecrets.users }}
-            - name: SNOWFLAKE_USER_{{ upper $user.username }}_PRIVATE_KEY
+            - name: SNOWFLAKE_USER_PRIVATE_KEY_{{ upper $user.username }}
               valueFrom:
                 secretKeyRef:
                   name: snowflake-user-{{ $user.username | replace "_" "-" }}
                   key: private_key
             {{- if $user.passphraseProperty }}
-            - name: SNOWFLAKE_USER_{{ upper $user.username }}_PASSPHRASE
+            - name: SNOWFLAKE_USER_PASSPHRASE_{{ upper $user.username }}
               valueFrom:
                 secretKeyRef:
                   name: snowflake-user-{{ $user.username | replace "_" "-" }}
