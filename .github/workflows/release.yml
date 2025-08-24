@@ -109,8 +109,21 @@ jobs:
           git push origin main
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.6.0
+        uses: helm/chart-releaser-action@v1.7.0
         with:
           mark_as_latest: ${{ steps.version.outputs.is_main }}
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Mark as pre-release (non-main branches)
+        if: steps.version.outputs.is_main == 'false'
+        run: |
+          PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
+          TAG_NAME="proxy-${PRERELEASE_VERSION}"
+          
+          # Update the release to mark it as pre-release
+          gh release edit "$TAG_NAME" --prerelease
+          
+          echo "✅ Marked $TAG_NAME as pre-release"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
