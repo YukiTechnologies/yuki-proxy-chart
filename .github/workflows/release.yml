@@ -125,3 +125,16 @@ jobs:
           echo "✅ Marked $TAG_NAME as pre-release"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Add prerelease version to job summary (non-main branches)
+        if: steps.version.outputs.is_main == 'false'
+        run: |
+          PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/proxy-${PRERELEASE_VERSION}"
+          {
+            echo "## Helm Chart Pre-release"
+            echo ""
+            echo "- Version: \`$PRERELEASE_VERSION\`"
+            echo ""
+            echo "[View release on GitHub](${RELEASE_URL})"
+          } >> "$GITHUB_STEP_SUMMARY"
