@@ -20,7 +20,8 @@ spec:
         spec:
           initContainers:
             - name: curl-{{ $endpoint.name }}
-              image: alpine/curl
+              image: alpine/curl:8.14.1
+              imagePullPolicy: IfNotPresent
               command: [ "/bin/sh" ]
               args:
                 - "-c"
@@ -46,7 +47,8 @@ spec:
                   mountPath: "/data"
           containers:
             - name: set-{{ $endpoint.name }}-result
-              image: redis:7-alpine
+              image: redis:8.2.1-alpine
+              imagePullPolicy: IfNotPresent
               command: [ "/bin/sh" ]
               args:
                 - "-c"
