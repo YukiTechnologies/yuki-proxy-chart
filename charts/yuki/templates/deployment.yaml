@@ -7,8 +7,8 @@ metadata:
     app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
     app: {{ .Values.app.name }}
     group: {{ .Values.app.group }}
-  annotations:
   {{- if .Values.app.annotations }}
+  annotations:
   {{ tpl (toYaml .Values.app.annotations) . | indent 4 }}
   {{- end }}
 spec:
