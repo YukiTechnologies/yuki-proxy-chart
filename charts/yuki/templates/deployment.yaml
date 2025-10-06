@@ -9,7 +9,7 @@ metadata:
     group: {{ .Values.app.group }}
   {{- if .Values.app.annotations }}
   annotations:
-  {{ tpl (toYaml .Values.app.annotations) . | indent 4 }}
+    {{- tpl (toYaml .Values.app.annotations) . | nindent 4 }}
   {{- end }}
 spec:
   {{- with .Values.app.replicaCount }}
@@ -28,7 +28,7 @@ spec:
       annotations:
         ad.datadoghq.com/my-container.tags: '["image_tag:{{ tpl .Values.app.container.image . | splitList ":" | last }}"]'
         {{- if (dig "pod" "annotations" nil .Values.app) }}
-        {{ tpl (toYaml .Values.app.pod.annotations) . | indent 8 }}
+          {{ tpl (toYaml .Values.app.pod.annotations) . | nindent 8 }}
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
