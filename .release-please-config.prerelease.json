@@ -1,0 +1,15 @@
+{
+  "release-type": "helm",
+  "include-v-in-tag": false,
+  "versioning": "prerelease",
+  "prerelease": true,
+  "packages": {
+    "charts/yuki": {
+      "component": "yuki",
+      "package-name": "yuki",
+      "release-type": "helm",
+      "changelog-path": "CHANGELOG.md",
+      "prerelease": true
+    }
+  }
+}
