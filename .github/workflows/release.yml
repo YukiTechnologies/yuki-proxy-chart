@@ -1,140 +1,28 @@
-name: Release Charts
-
+name: Prepare Helm Release
 on:
   push:
     branches:
       - main
-      - '*'  # Trigger on any branch push
+      - '*'
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  release:
-    permissions:
-      contents: write
+  release-main:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: googleapis/release-please-action@v4
         with:
-          fetch-depth: 0
+          config-file: .release-please-config.stable.json
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Add Helm repositories
-        run: |
-          helm repo add external-secrets https://charts.external-secrets.io
-          helm repo update
-
-      - name: Determine version strategy
-        id: version
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "strategy=release" >> $GITHUB_OUTPUT
-            echo "is_main=true" >> $GITHUB_OUTPUT
-          else
-            echo "strategy=prerelease" >> $GITHUB_OUTPUT
-            echo "is_main=false" >> $GITHUB_OUTPUT
-            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Auto-bump version (main branch only)
-        if: steps.version.outputs.is_main == 'true'
-        run: |
-          # Get current version from Chart.yaml
-          CURRENT_VERSION=$(grep '^version:' charts/yuki/Chart.yaml | awk '{print $2}')
-          echo "Current version: $CURRENT_VERSION"
-          
-          # Parse version components
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR=${VERSION_PARTS[0]}
-          MINOR=${VERSION_PARTS[1]}
-          PATCH=${VERSION_PARTS[2]}
-          
-          # Increment patch version
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-          
-          echo "New version: $NEW_VERSION"
-          
-          # Update Chart.yaml
-          sed -i "s/^version: .*/version: $NEW_VERSION/" charts/yuki/Chart.yaml
-          
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        id: bump
-
-      - name: Create pre-release version (non-main branches)
-        if: steps.version.outputs.is_main == 'false'
-        run: |
-          # Get current version from Chart.yaml
-          CURRENT_VERSION=$(grep '^version:' charts/yuki/Chart.yaml | awk '{print $2}')
-          SHORT_SHA="${{ steps.version.outputs.short_sha }}"
-          
-          # Parse version components and increment patch for pre-release
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR=${VERSION_PARTS[0]}
-          MINOR=${VERSION_PARTS[1]}
-          PATCH=${VERSION_PARTS[2]}
-          
-          # Increment patch version for pre-release
-          NEW_PATCH=$((PATCH + 1))
-          NEXT_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-          
-          # Create pre-release version
-          PRERELEASE_VERSION="${NEXT_VERSION}-${SHORT_SHA}"
-          echo "Pre-release version: $PRERELEASE_VERSION (based on next version $NEXT_VERSION)"
-          
-          # Update Chart.yaml with pre-release version
-          sed -i "s/^version: .*/version: $PRERELEASE_VERSION/" charts/yuki/Chart.yaml
-          
-          echo "prerelease_version=$PRERELEASE_VERSION" >> $GITHUB_OUTPUT
-        id: prerelease
-
-      - name: Update chart dependencies
-        run: |
-          find charts -name 'Chart.yaml' -exec dirname {} \; | xargs -I {} helm dependency update {}
-
-      - name: Commit version changes (main branch only)
-        if: steps.version.outputs.is_main == 'true'
-        run: |
-          git add charts/yuki/Chart.yaml
-          git commit -m "chore: bump chart version to ${{ steps.bump.outputs.new_version }} [skip ci]" || echo "No changes to commit"
-          git push origin main
-
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Mark as pre-release (non-main branches)
-        if: steps.version.outputs.is_main == 'false'
-        run: |
-          PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
-          TAG_NAME="proxy-${PRERELEASE_VERSION}"
-          
-          # Update the release to mark it as pre-release
-          gh release edit "$TAG_NAME" --prerelease
-          
-          echo "✅ Marked $TAG_NAME as pre-release"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Add prerelease version to job summary (non-main branches)
-        if: steps.version.outputs.is_main == 'false'
-        run: |
-          PRERELEASE_VERSION="${{ steps.prerelease.outputs.prerelease_version }}"
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/proxy-${PRERELEASE_VERSION}"
-          {
-            echo "## Helm Chart Pre-release"
-            echo ""
-            echo "- Version: \`$PRERELEASE_VERSION\`"
-            echo ""
-            echo "[View release on GitHub](${RELEASE_URL})"
-          } >> "$GITHUB_STEP_SUMMARY"
+  release-prerelease:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # same action, different config-file
+          config-file: .release-please-config.prerelease.json
