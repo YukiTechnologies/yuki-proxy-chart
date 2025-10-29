@@ -12,6 +12,13 @@ app:
       SERILOG_DATADOG_ENABLED: true
       PROXY_HOST:
       REDIS_HOST:
+
+# Additional environment variables from existing Kubernetes Secrets
+#  envFromSecrets:
+#    SECRET_ENV_VAR:
+#      name: existing-secret-name
+#      key: key-property
+
   service:
     type: NodePort
     port: 5162
