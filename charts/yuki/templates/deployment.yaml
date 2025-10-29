@@ -58,9 +58,16 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
-            {{- range $key, $value := $.Values.app.container.env }}
+            {{- range $key, $value := .Values.app.container.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $value := .Values.app.container.envFromSecrets }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.name }}
+                  key: {{ $value.key }}
             {{- end }}
             {{- if and .Values.secret .Values.secret.aws.enabled }}
             - name: AWS_ACCESS_KEY_ID
