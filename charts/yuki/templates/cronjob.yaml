@@ -59,6 +59,7 @@ spec:
                   echo "Setting Redis key '$REDIS_KEY' to '$RESULT' with 120s expiry..."
                   REDIS_CMD="redis-cli -c -h $REDIS_HOST -p ${REDIS_PORT:-6379}"
                   [ "$REDIS_TLS" = "true" ] && REDIS_CMD="$REDIS_CMD --tls"
+                  [ -n "$REDIS_PASSWORD" ] && export REDISCLI_AUTH="$REDIS_PASSWORD"
                   if $REDIS_CMD set $REDIS_KEY $RESULT EX 120; then
                     echo "✅ Successfully updated Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
                   else
@@ -84,7 +85,7 @@ spec:
                 {{- end }}
                 {{- if and $.Values.redis $.Values.redis.tls }}
                 - name: REDIS_TLS
-                  value: "true"
+                  value: {{ $.Values.redis.tls | quote }}
                 {{- end }}
           {{- with $.Values.affinity }}
           affinity:
