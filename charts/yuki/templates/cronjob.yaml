@@ -58,8 +58,16 @@ spec:
                   echo "Result: $RESULT"
                   echo "Setting Redis key '$REDIS_KEY' to '$RESULT' with 120s expiry..."
                   REDIS_CMD="redis-cli -c -h $REDIS_HOST -p ${REDIS_PORT:-6379}"
-                  [ "$REDIS_TLS" = "true" ] && REDIS_CMD="$REDIS_CMD --tls"
-                  [ -n "$REDIS_PASSWORD" ] && export REDISCLI_AUTH="$REDIS_PASSWORD"
+
+                  if [ -n "$REDIS_PASSWORD" ]; then
+                    export REDISCLI_AUTH="$REDIS_PASSWORD"
+                    REDIS_CMD="$REDIS_CMD --tls"
+                    echo "Using password authentication and TLS for Redis"
+                  elif [ "$REDIS_TLS" = "true" ]; then
+                    REDIS_CMD="$REDIS_CMD --tls"
+                    echo "Using TLS for Redis (no password)"
+                  fi
+                  
                   if $REDIS_CMD set $REDIS_KEY $RESULT EX 120; then
                     echo "✅ Successfully updated Redis key '$REDIS_KEY' for {{ $endpoint.name }}"
                   else
@@ -75,17 +83,6 @@ spec:
                 {{- range $key, $value := $.Values.app.container.env }}
                 - name: {{ $key }}
                   value: {{ $value | quote }}
-                {{- end }}
-                {{- if and $.Values.redis $.Values.redis.password }}
-                - name: REDIS_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: {{ $.Values.redis.password.secretName }}
-                      key: {{ $.Values.redis.password.secretKey }}
-                {{- end }}
-                {{- if and $.Values.redis $.Values.redis.tls }}
-                - name: REDIS_TLS
-                  value: {{ $.Values.redis.tls | quote }}
                 {{- end }}
           {{- with $.Values.affinity }}
           affinity:

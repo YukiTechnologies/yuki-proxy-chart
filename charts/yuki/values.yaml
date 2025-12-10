@@ -12,6 +12,8 @@ app:
       SERILOG_DATADOG_ENABLED: true
       PROXY_HOST:
       REDIS_HOST:
+      REDIS_PASSWORD:
+      REDIS_TLS:
 
 # Additional environment variables from existing Kubernetes Secrets
 #  envFromSecrets:
