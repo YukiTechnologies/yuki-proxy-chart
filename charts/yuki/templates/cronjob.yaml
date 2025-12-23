@@ -47,7 +47,7 @@ spec:
                   mountPath: "/data"
           containers:
             - name: set-{{ $endpoint.name }}-result
-              image: redis:8.2.1-alpine
+              image: redis:8.2.3-alpine
               imagePullPolicy: IfNotPresent
               command: [ "/bin/sh" ]
               args:
