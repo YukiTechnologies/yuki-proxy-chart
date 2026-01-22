@@ -1,6 +1,6 @@
 apiVersion: v2
 name: proxy
-description: A Helm chart for Yuki Proxy Deployment
+description: A Helm chart for Yuki Proxy Deployment 
 version: 0.0.63
 appVersion: "1.16.0"
 dependencies:
