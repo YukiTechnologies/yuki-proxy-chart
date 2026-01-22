@@ -35,7 +35,7 @@ jobs:
           rm "$FILE.bak"
           echo "Updated $FILE to proxyChartVersion: ${{ steps.version.outputs.version }}"
 
-      - name: Create PR in terraform-infra
+      - name: Commit and push change to terraform-infra main
         working-directory: terraform-infra
         env:
           GITHUB_TOKEN: ${{ secrets.TERRAFORM_INFRA_TOKEN }}
@@ -43,25 +43,17 @@ jobs:
           git config user.name "proxy-chart-bot"
           git config user.email "proxy-chart-bot@yuki.local"
 
-          BRANCH="bump-proxy-chart-${{ steps.version.outputs.version }}"
-          git checkout -b "$BRANCH"
+          # Ensure we are on latest main
+          git checkout main
+          git pull origin main
+
           git add apps/charts/genesis/values/production/base.yaml
           git commit -m "Bump yuki-proxy chart to ${{ steps.version.outputs.version }}" \
-                      -m "Co-Authored-By: Warp <agent@warp.dev>"
-          git push origin "$BRANCH"
+                      -m "Co-Authored-By: Warp <agent@warp.dev>" || echo "No changes to commit"
 
-          # Create PR via GitHub API
-          REPO="YukiTechnologies/terraform-infra"
-          TITLE="Bump yuki-proxy chart to ${{ steps.version.outputs.version }}"
-          BODY="Automatic bump of proxyChartVersion to ${{ steps.version.outputs.version }}.\n\nCo-Authored-By: Warp <agent@warp.dev>"
-
-          jq -n --arg title "$TITLE" \
-                --arg head "$BRANCH" \
-                --arg base "main" \
-                --arg body "$BODY" \
-                '{title: $title, head: $head, base: $base, body: $body}' \
-          | curl -sS -X POST \
-              -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/$REPO/pulls \
-              -d @-
+          # Only push if there is a new commit
+          if [ -n "$(git log origin/main..HEAD)" ]; then
+            git push origin HEAD:main
+          else
+            echo "No new commits to push to main"
+          fi
