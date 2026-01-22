@@ -1,0 +1,67 @@
+name: Bump terraform-infra proxy chart version
+
+on:
+  push:
+    tags:
+      - "proxy-*"
+
+jobs:
+  bump-terraform-infra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out yuki-proxy-chart (this repo)
+        uses: actions/checkout@v4
+
+      - name: Extract proxy chart version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF##*/}"        # e.g. proxy-0.0.58
+          VER="${TAG#proxy-}"            # 0.0.58
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Check out terraform-infra
+        uses: actions/checkout@v4
+        with:
+          repository: YukiTechnologies/terraform-infra
+          token: ${{ secrets.TERRAFORM_INFRA_TOKEN }}
+          path: terraform-infra
+
+      - name: Update proxyChartVersion in production base values
+        working-directory: terraform-infra
+        run: |
+          FILE="apps/charts/genesis/values/production/base.yaml"
+          sed -i.bak "s/^proxyChartVersion: .*/proxyChartVersion: ${{ steps.version.outputs.version }}/" "$FILE"
+          rm "$FILE.bak"
+          echo "Updated $FILE to proxyChartVersion: ${{ steps.version.outputs.version }}"
+
+      - name: Create PR in terraform-infra
+        working-directory: terraform-infra
+        env:
+          GITHUB_TOKEN: ${{ secrets.TERRAFORM_INFRA_TOKEN }}
+        run: |
+          git config user.name "proxy-chart-bot"
+          git config user.email "proxy-chart-bot@yuki.local"
+
+          BRANCH="bump-proxy-chart-${{ steps.version.outputs.version }}"
+          git checkout -b "$BRANCH"
+          git add apps/charts/genesis/values/production/base.yaml
+          git commit -m "Bump yuki-proxy chart to ${{ steps.version.outputs.version }}" \
+                      -m "Co-Authored-By: Warp <agent@warp.dev>"
+          git push origin "$BRANCH"
+
+          # Create PR via GitHub API
+          REPO="YukiTechnologies/terraform-infra"
+          TITLE="Bump yuki-proxy chart to ${{ steps.version.outputs.version }}"
+          BODY="Automatic bump of proxyChartVersion to ${{ steps.version.outputs.version }}.\n\nCo-Authored-By: Warp <agent@warp.dev>"
+
+          jq -n --arg title "$TITLE" \
+                --arg head "$BRANCH" \
+                --arg base "main" \
+                --arg body "$BODY" \
+                '{title: $title, head: $head, base: $base, body: $body}' \
+          | curl -sS -X POST \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/$REPO/pulls \
+              -d @-
