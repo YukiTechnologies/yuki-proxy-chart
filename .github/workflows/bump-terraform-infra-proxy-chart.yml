@@ -20,11 +20,20 @@ jobs:
           VER="${TAG#proxy-}"            # 0.0.58
           echo "version=$VER" >> "$GITHUB_OUTPUT"
 
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.YUKI_CI_APP_ID }}
+          private-key: ${{ secrets.YUKI_CI_APP_PRIVATE_KEY }}
+          repositories: |
+            terraform-infra
+
       - name: Check out terraform-infra
         uses: actions/checkout@v4
         with:
           repository: YukiTechnologies/terraform-infra
-          token: ${{ secrets.TERRAFORM_INFRA_TOKEN }}
+          token: ${{ steps.generate-token.outputs.token }}
           path: terraform-infra
 
       - name: Update proxyChartVersion in production base values
@@ -38,7 +47,7 @@ jobs:
       - name: Commit and push change to terraform-infra main
         working-directory: terraform-infra
         env:
-          GITHUB_TOKEN: ${{ secrets.TERRAFORM_INFRA_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
           git config user.name "proxy-chart-bot"
           git config user.email "proxy-chart-bot@yuki.local"
