@@ -98,3 +98,30 @@ spec:
             {{- end }}
             {{- end }}
 
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: {{ .Values.app.container.port }}
+            # Fail fast when the app clearly won't start, but allow for cold boots.
+            # Allow up to ~60s total startup time.
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: {{ .Values.app.container.port }}
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: {{ .Values.app.container.port }}
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 1
+            successThreshold: 1
+
