@@ -122,6 +122,6 @@ spec:
               port: {{ .Values.app.container.port }}
             periodSeconds: 5
             timeoutSeconds: 1
-            failureThreshold: 1
+            failureThreshold: 3
             successThreshold: 1
 
