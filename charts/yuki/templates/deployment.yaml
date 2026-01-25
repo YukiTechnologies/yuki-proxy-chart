@@ -118,7 +118,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /health/live
               port: {{ .Values.app.container.port }}
             periodSeconds: 5
             timeoutSeconds: 1
