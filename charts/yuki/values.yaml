@@ -38,27 +38,31 @@ externalSecrets:
   # Deploy external-secrets operator (for self-hosted mode)
   operator:
     enabled: false
-  # SecretStore configuration
-  secretStore:
-    # Choose either 'secretsmanager' or 'parameterstore'
-    type: secretsmanager
-    # AWS region for the SecretStore
-    region: us-east-1
-    # IAM role ARN for accessing secrets (for self-hosted deployments)
-    # In SaaS mode, this will use the serviceAccount.roleARN
-    roleArn: ""
-    # Optional: External ID for additional security when assuming cross-account roles
-    externalID: ""
+  # SecretStores configuration (supports multiple AWS accounts / roles)
+  # Example:
+  # stores:
+  #   default:
+  #     type: secretsmanager
+  #     region: us-east-1
+  #     roleArn: arn:aws:iam::<ACCOUNT_ID>:role/YukiProxyReadKeysRole
+  #   customer:
+  #     type: secretsmanager
+  #     region: us-east-1
+  #     roleArn: arn:aws:iam::<CUSTOMER_ACCOUNT_ID>:role/YukiProxyReadKeysRole
+  stores: {}
   
   # Snowflake user credentials configuration
+  # Each user selects which store to use via the `store` field.
   users: []
   # Example configuration:
   # users:
   #   - username: user1
+  #     store: default
   #     secretKey: /snowflake/users/user1/credentials  # Path to secret in AWS
   #     privateKeyProperty: private_key  # Property name for private key
   #     passphraseProperty: passphrase   # Optional: property name for passphrase
   #   - username: user2
+  #     store: customer
   #     secretKey: /snowflake/users/user2/credentials
   #     privateKeyProperty: private_key
   #     # No passphrase for user2
