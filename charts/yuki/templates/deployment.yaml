@@ -38,6 +38,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
+      terminationGracePeriodSeconds: 30
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -124,7 +125,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /health/live
+              path: /health/ready
               port: {{ .Values.app.container.port }}
             periodSeconds: 5
             timeoutSeconds: 1
