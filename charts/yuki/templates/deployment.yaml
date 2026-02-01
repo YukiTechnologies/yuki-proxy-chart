@@ -132,3 +132,15 @@ spec:
             failureThreshold: 1
             successThreshold: 1
 
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Ask the proxy to start draining new traffic before Kubernetes sends SIGTERM
+                    curl -sS -m 1 http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain || true
+                    # Give kubelet and the LB a short window to see readiness go false and remove this pod
+                    sleep 5
+
