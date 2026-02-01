@@ -12,6 +12,12 @@ metadata:
     {{- tpl (toYaml .Values.app.annotations) . | nindent 4 }}
   {{- end }}
 spec:
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   {{- with .Values.app.replicaCount }}
   {{- if not ($.Values.hpa).enabled }}
   replicas: {{ . }}
