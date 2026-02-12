@@ -87,7 +87,23 @@ resources:
 affinity: { }
 tolerations: [ ]
 
-# Configuration for external-secrets subchart (when operator.enabled = true)
+topologySpreadConstraints: []
+# Example:
+# topologySpreadConstraints:
+#   - maxSkew: 1
+#     topologyKey: topology.kubernetes.io/zone
+#     whenUnsatisfiable: ScheduleAnyway
+#     labelSelector:
+#       matchLabels:
+#         app: yuki-proxy
+
+podDisruptionBudget:
+  enabled: false
+  # minAvailable: 1
+  # maxUnavailable: 1
+  # unhealthyPodEvictionPolicy: IfHealthyBudget  # K8s 1.27+
+
+# Configuration for external-secrets subchart
 external-secrets:
   installCRDs: true
   replicaCount: 1
