@@ -1,4 +1,12 @@
 {{- if .Values.podDisruptionBudget.enabled }}
+{{- $minAvailable := .Values.podDisruptionBudget.minAvailable }}
+{{- $maxUnavailable := .Values.podDisruptionBudget.maxUnavailable }}
+{{- if and $minAvailable $maxUnavailable }}
+{{- fail "podDisruptionBudget: cannot specify both minAvailable and maxUnavailable" }}
+{{- end }}
+{{- if not (or $minAvailable $maxUnavailable) }}
+{{- fail "podDisruptionBudget: must specify either minAvailable or maxUnavailable" }}
+{{- end }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -8,10 +16,10 @@ metadata:
     app: {{ .Values.app.name }}
     group: {{ .Values.app.group }}
 spec:
-  {{- with .Values.podDisruptionBudget.minAvailable }}
+  {{- with $minAvailable }}
   minAvailable: {{ . }}
   {{- end }}
-  {{- with .Values.podDisruptionBudget.maxUnavailable }}
+  {{- with $maxUnavailable }}
   maxUnavailable: {{ . }}
   {{- end }}
   {{- with .Values.podDisruptionBudget.unhealthyPodEvictionPolicy }}

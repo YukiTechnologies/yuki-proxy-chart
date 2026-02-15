@@ -99,8 +99,8 @@ topologySpreadConstraints: []
 
 podDisruptionBudget:
   enabled: false
-  # minAvailable: 1
-  # maxUnavailable: 1
+  maxUnavailable: 1
+  # minAvailable: 1  # Use either minAvailable OR maxUnavailable, not both
   # unhealthyPodEvictionPolicy: IfHealthyBudget  # K8s 1.27+
 
 # Configuration for external-secrets subchart
