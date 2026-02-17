@@ -23,3 +23,21 @@ This repository contains the Helm chart used to deploy the Yuki Proxy service in
 ## Common tasks
 - Add a new proxy: create a values file in `terraform-infra` under `apps/values/proxy/<env>/<region>/<namespace>/values.yaml` and set `ingress.enabled: true`.
 - Migrate routing: adjust `ingress.host` per proxy if a non-default domain is required.
+
+## Self-hosted (on‑prem) deployments
+If customers deploy the proxy in their own cluster (non‑EKS), the chart still works. Key notes:
+- Do not set AWS ALB annotations. Use the ingress class available in the customer cluster (e.g., `nginx`, `traefik`, `istio`).
+- You must set a valid hostname via `ingress.host` for the customer’s domain. The default `{namespace}.yukicomputing.com` is only for Yuki‑managed environments.
+- TLS: most non‑ALB ingress controllers terminate TLS via `spec.tls`. The chart currently focuses on ALB annotations; if you need first‑class TLS fields (e.g., `ingress.tls`), open an issue/PR and we’ll add it.
+- DNS: if the cluster runs external‑dns, it will read `spec.rules[].host`; otherwise, create the DNS record pointing to the customer’s ingress/load balancer.
+
+Example values for NGINX ingress:
+
+```yaml
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  host: proxy.customer.example.com
+```
