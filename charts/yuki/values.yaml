@@ -12,6 +12,9 @@ app:
       SERILOG_DATADOG_ENABLED: true
       PROXY_HOST:
       REDIS_HOST:
+      HEALTH_CHECK_REDIS_TIMEOUT_MS: 200
+      HEALTH_CHECK_SYSTEM_TIMEOUT_MS: 500
+      HEALTH_CHECK_COMPUTE_TIMEOUT_MS: 500
 
 # Additional environment variables from existing Kubernetes Secrets
 #  envFromSecrets:
