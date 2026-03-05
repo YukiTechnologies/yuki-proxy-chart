@@ -12,7 +12,8 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - http:
+    - host: {{ .Values.ingress.host | default (printf "%s.yukicomputing.com" .Values.namespace) }}
+      http:
         paths:
           - path: /
             pathType: Prefix
