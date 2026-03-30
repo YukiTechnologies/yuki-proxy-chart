@@ -64,6 +64,10 @@ externalSecrets:
   #     secretKey: /snowflake/users/user1/credentials  # Path to secret in AWS
   #     privateKeyProperty: private_key  # Property name for private key
   #     passphraseProperty: passphrase   # Optional: property name for passphrase
+  #     sites:                           # Optional: generate per-site env vars
+  #       - staging                      # -> SNOWFLAKE_USER_PRIVATE_KEY_USER1_STAGING
+  #       - prod                         # -> SNOWFLAKE_USER_PRIVATE_KEY_USER1_PROD
+  #                                      # Without sites: SNOWFLAKE_USER_PRIVATE_KEY_USER1
   #   - username: user2
   #     store: customer
   #     secretKey: /snowflake/users/user2/credentials
