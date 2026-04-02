@@ -94,6 +94,23 @@ spec:
             {{- end }}
             {{- if and .Values.externalSecrets.enabled .Values.externalSecrets.users }}
             {{- range $user := .Values.externalSecrets.users }}
+            {{- if $user.sites }}
+            {{- range $site := $user.sites }}
+            {{- $siteSuffix := $site | upper | replace "-" "_" }}
+            - name: SNOWFLAKE_USER_PRIVATE_KEY_{{ upper $user.username }}_{{ $siteSuffix }}
+              valueFrom:
+                secretKeyRef:
+                  name: snowflake-user-{{ $user.username | replace "_" "-" }}
+                  key: private_key
+            {{- if $user.passphraseProperty }}
+            - name: SNOWFLAKE_USER_PASSPHRASE_{{ upper $user.username }}_{{ $siteSuffix }}
+              valueFrom:
+                secretKeyRef:
+                  name: snowflake-user-{{ $user.username | replace "_" "-" }}
+                  key: passphrase
+            {{- end }}
+            {{- end }}
+            {{- else }}
             - name: SNOWFLAKE_USER_PRIVATE_KEY_{{ upper $user.username }}
               valueFrom:
                 secretKeyRef:
@@ -105,6 +122,7 @@ spec:
                 secretKeyRef:
                   name: snowflake-user-{{ $user.username | replace "_" "-" }}
                   key: passphrase
+            {{- end }}
             {{- end }}
             {{- end }}
             {{- end }}
