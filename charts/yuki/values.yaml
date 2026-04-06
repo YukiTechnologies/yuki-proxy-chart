@@ -70,32 +70,13 @@ externalSecrets:
   #     privateKeyProperty: private_key
   #     # No passphrase for user2
 
-# Datadog APM distributed tracing.
-# Visualise the full query lifecycle as a trace tree: execute → retry → monitor → complete.
-#
-# Agent mode (default, agentless: false):
-#   Requires a Datadog agent DaemonSet on the cluster (already present on Yuki-managed deployments).
-#   Traces are sent to the agent on the node via DD_AGENT_HOST (Downward API).
-#
-# Agentless mode (agentless: true):
-#   For self-hosted customers without a Datadog agent. Traces are sent directly to the
-#   Datadog HTTP intake using the API key baked into the proxy image. No extra infrastructure needed.
-#
-# Sampling / cost control:
-#   sampleRate: "0"  — drop all spans not matched by samplingRules (default, lowest cost).
-#   sampleRate: "1.0" — trace every query (highest cost, ~$195/month at typical load).
-#   samplingRules: JSON array — fine-grained rules; matched spans always get sampled regardless of sampleRate.
-#   To disable tracing entirely: set enabled: false (no env vars are injected, zero overhead).
+# Datadog APM tracing (execute → retry → monitor → complete).
+# agentless: true = no DD agent needed; uses API key baked into the image.
+# sampleRate: "0" + samplingRules = only retries/failures are traced (lowest cost).
 datadogApm:
   enabled: false
-  # Set to true for self-hosted deployments without a Datadog agent on the cluster.
-  agentless: false
-  # Global fallback sample rate for spans not matched by samplingRules.
-  # "0" = drop unmatched spans (recommended — only retries and failures are kept by default rules).
-  # "1.0" = sample everything.
-  sampleRate: "0"
-  # Fine-grained sampling rules (JSON). Default: keep all retries and all failed queries.
-  # Set to "" to disable rules and rely solely on sampleRate.
+  agentless: false  # true for self-hosted clusters without a Datadog agent
+  sampleRate: "0"   # "1.0" to trace everything
   samplingRules: '[{"name":"yuki.query.retry","sample_rate":1.0},{"name":"yuki.query.complete","tags":{"finalStatus":"failed"},"sample_rate":1.0}]'
 
 hpa:
