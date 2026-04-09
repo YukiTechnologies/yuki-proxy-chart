@@ -70,6 +70,15 @@ externalSecrets:
   #     privateKeyProperty: private_key
   #     # No passphrase for user2
 
+# Datadog APM tracing (execute → retry → monitor → complete).
+# agentless: true = no DD agent needed; uses API key baked into the image.
+# sampleRate: "0" + samplingRules = only retries/failures are traced (lowest cost).
+datadogApm:
+  enabled: false
+  agentless: false  # true for self-hosted clusters without a Datadog agent
+  sampleRate: "0"   # "1.0" to trace everything
+  samplingRules: '[{"name":"yuki.query.retry","sample_rate":1.0},{"name":"yuki.query.complete","tags":{"finalStatus":"failed"},"sample_rate":1.0}]'
+
 hpa:
   enabled: true
   minReplicas: 5
