@@ -109,15 +109,8 @@ spec:
             {{- end }}
             {{- end }}
             {{- if .Values.datadogApm.enabled }}
-            {{- if .Values.datadogApm.agentless }}
             - name: DD_TRACE_AGENT_URL
-              value: "https://trace.agent.datadoghq.com"
-            {{- else }}
-            - name: DD_AGENT_HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
-            {{- end }}
+              value: {{ .Values.datadogApm.agentServiceUrl | default "https://trace.agent.datadoghq.com" | quote }}
             - name: DD_SERVICE
               value: "yuki-proxy"
             - name: DD_ENV
