@@ -76,7 +76,6 @@ externalSecrets:
 datadogApm:
   enabled: false
   agentless: false  # true for self-hosted clusters without a Datadog agent
-  agentServiceUrl: ""  # e.g. http://datadog-agent.data-dog.svc.cluster.local:8126
   sampleRate: "0"   # "1.0" to trace everything
   samplingRules: '[{"name":"yuki.query.retry","sample_rate":1.0},{"name":"yuki.query.complete","tags":{"finalStatus":"failed"},"sample_rate":1.0}]'
 
