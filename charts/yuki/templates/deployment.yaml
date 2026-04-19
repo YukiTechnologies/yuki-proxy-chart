@@ -64,8 +64,6 @@ spec:
           env:
             - name: PROXY_VERSION
               value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
-            - name: PROXY_ID
-              value: "{{ .Release.Name }}"
             - name: HELM_CHART_VERSION
               value: "{{ .Chart.Version }}"
             - name: IMAGE_VERSION
