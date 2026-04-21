@@ -64,6 +64,10 @@ spec:
           env:
             - name: PROXY_VERSION
               value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
+            - name: HELM_CHART_VERSION
+              value: "{{ .Chart.Version }}"
+            - name: IMAGE_VERSION
+              value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
             - name: REDIS_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
