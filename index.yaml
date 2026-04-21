@@ -13,6 +13,20 @@ entries:
   proxy:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-04-21T09:57:45.993990527Z"
+    dependencies:
+    - condition: externalSecrets.operator.enabled
+      name: external-secrets
+      repository: https://charts.external-secrets.io
+      version: 0.19.1
+    description: A Helm chart for Yuki Proxy Deployment
+    digest: 9ad2c47abbc0572acf93becdbf2bb599de34fe3b5ea584593a969f72c9fd1c24
+    name: proxy
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/proxy-0.0.88/proxy-0.0.88.tgz
+    version: 0.0.88
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-04-13T18:05:48.46220691Z"
     dependencies:
     - condition: externalSecrets.operator.enabled
@@ -807,4 +821,4 @@ entries:
     urls:
     - https://yukitechnologies.github.io/yuki-proxy-chart/proxy-0.0.43-1754307817.tgz
     version: 0.0.43-1754307817
-generated: "2026-04-13T18:05:48.46247997Z"
+generated: "2026-04-21T09:57:45.994183377Z"
