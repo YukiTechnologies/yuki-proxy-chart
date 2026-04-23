@@ -63,7 +63,9 @@ spec:
             - containerPort: {{ .Values.app.container.port }}
           env:
             - name: PROXY_TYPE
-              value: "{{ ternary "fully_hosted" "self_hosted" .Values.ingress.enabled }}"
+              value: "{{ .Values.proxyType }}"
+            - name: PROXY_PLATFORM
+              value: "{{ .Values.proxyPlatform }}"
             - name: PROXY_VERSION
               value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
             - name: HELM_CHART_VERSION
