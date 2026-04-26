@@ -84,6 +84,8 @@ hpa:
   targetCPUUtilizationPercentage: 90
   targetMemoryUtilizationPercentage: 70
 
+proxyDeploymentType: self_hosted
+
 ingress:
   enabled: false
 
