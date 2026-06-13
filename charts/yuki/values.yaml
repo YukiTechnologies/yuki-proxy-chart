@@ -9,7 +9,10 @@ app:
       ASPNETCORE_ENVIRONMENT: Prod
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
-      SERILOG_DATADOG_ENABLED: true
+      # SERILOG_DATADOG_ENABLED is no longer set here. The legacy Datadog Serilog
+      # sink is replaced by the `observability` block below, which drives this env
+      # var off the selected backend (always disabled). Re-add it here only to
+      # force-restore Datadog logging.
       PROXY_HOST:
       REDIS_HOST:
       HEALTH_CHECK_REDIS_TIMEOUT_MS: 200
@@ -99,6 +102,13 @@ resources:
 affinity: { }
 tolerations: [ ]
 
+# Pin the proxy pods to a specific set of nodes. When using the Groundcover
+# sensor backend you can mirror this same selector under
+# `groundcover.agent.nodeSelector` so the eBPF DaemonSet lands on exactly the
+# nodes the proxy runs on (a DaemonSet can't follow an HPA-scaled Deployment
+# otherwise). Leave empty to schedule the proxy anywhere.
+nodeSelector: { }
+
 topologySpreadConstraints: []
 # Example:
 # topologySpreadConstraints:
@@ -120,3 +130,121 @@ external-secrets:
   replicaCount: 1
   serviceAccount:
     create: true
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+# Self-hosted proxies ship telemetry to Yuki's Groundcover (BYOC) instead of
+# Datadog. Exactly ONE of two backends is deployed with the proxy — this is the
+# single knob the UI exposes:
+#
+#   otlp             -> deploy an OpenTelemetry Collector alongside the proxy
+#                       that receives OTLP and forwards traces/logs/metrics to
+#                       Groundcover. Lightest footprint (one small Deployment);
+#                       no node-level privileges. The proxy is wired to emit to
+#                       it (OTEL_* env vars) for when app-side OTLP lands.
+#
+#   groundcoverSensor-> deploy the lightweight Groundcover eBPF sensor
+#                       (groundcover subchart, agent DaemonSet) in BYOC mode.
+#                       Captures the proxy's traffic with zero app changes, but
+#                       needs a DaemonSet + node access. Requires also setting
+#                       `groundcover.enabled: true` (the subchart toggle);
+#                       the chart fails to render if the two disagree.
+#
+# Selecting either backend disables the legacy Datadog Serilog sink
+# (SERILOG_DATADOG_ENABLED=false) on the proxy.
+observability:
+  # "otlp" | "groundcoverSensor"
+  backend: otlp
+
+  # Shared Groundcover ingestion settings — used by BOTH backends.
+  groundcover:
+    # BYOC ingestion endpoint. otlp backend wants the full URL; the sensor
+    # subchart wants the bare host (chart strips the scheme automatically).
+    endpoint: https://qkx2z3frg.platform.grcv.io
+    # Ingestion key. For a quick demo set `apiKey` inline (the chart creates a
+    # Secret named `secretName` from it). For anything real, leave apiKey empty
+    # and point `existingSecret` at a Secret you manage (e.g. via
+    # external-secrets), mirroring terraform-infra's
+    # groundcover-ingestion-key / INGESTION_KEY.
+    # !! Do not commit a real key to git — pass it with --set or a local -f file.
+    apiKey: ""
+    existingSecret:
+      name: ""            # e.g. groundcover-ingestion-key
+      key: INGESTION_KEY
+    # Name of the Secret the chart creates from `apiKey` (when no existingSecret
+    # is given). The groundcover subchart below references this same name.
+    secretName: groundcover-ingestion-key
+    # Logical environment name shown in Groundcover. Defaults to the release name.
+    envName: ""
+
+  # --- backend: otlp ---------------------------------------------------------
+  otlp:
+    image: otel/opentelemetry-collector-contrib:0.116.0
+    replicaCount: 1
+    # Ports the collector listens on (OTLP receiver).
+    grpcPort: 4317
+    httpPort: 4318
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
+    # Set to a full collector config (object) to completely override the
+    # chart-rendered default pipeline. Leave null to use the default below:
+    # receivers.otlp -> processors.batch -> exporters.otlphttp/groundcover
+    # for traces, logs and metrics.
+    configOverride: null
+
+# ---------------------------------------------------------------------------
+# Groundcover subchart overrides (backend: groundcoverSensor)
+# ---------------------------------------------------------------------------
+# These are passed verbatim to the groundcover subchart (Helm merges subchart
+# values statically — the parent chart cannot compute them at render time), so
+# anything the sensor needs must be a literal value here.
+#
+# `enabled` is the subchart condition: keep it false for the otlp backend, set
+# it true for the sensor (and set observability.backend: groundcoverSensor to
+# match — the chart refuses to render if the two disagree).
+#
+# Defaults below mirror terraform-infra's proven BYOC setup: no in-cluster
+# backend, ship to Yuki's Groundcover SaaS, ingestion key from the Secret the
+# parent chart creates (observability.groundcover.secretName).
+groundcover:
+  enabled: false
+  # Identifies this install in Groundcover — give each customer/cluster a
+  # unique value (e.g. yuki-proxy-<customer>).
+  clusterId: yuki-proxy
+  env: prod
+  global:
+    backend:
+      # false = BYOC: no in-cluster backend, ship to Yuki's Groundcover SaaS.
+      enabled: false
+    ingress:
+      # Bare host (no scheme) — must match observability.groundcover.endpoint.
+      site: qkx2z3frg.platform.grcv.io
+    # Reuse the same ingestion-key Secret the parent chart manages. Keep
+    # secretName in sync with observability.groundcover.secretName.
+    groundcoverPredefinedTokenSecret:
+      secretName: groundcover-ingestion-key
+      secretKey: INGESTION_KEY
+  # The eBPF sensor DaemonSet. Defaults to all nodes (its built-in tolerations
+  # are `operator: Exists`). To pin it to the proxy's nodes, mirror the proxy's
+  # `.nodeSelector`, e.g.:
+  #   agent:
+  #     nodeSelector:
+  #       yuki.io/workload: "true"
+  agent: {}
+  # Right-size the vector log-aggregator for small demo clusters (mirrors
+  # terraform-infra staging). Bump for higher telemetry volume.
+  vector:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
