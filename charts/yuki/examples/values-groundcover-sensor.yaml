@@ -1,0 +1,39 @@
+# Demo overlay: self-hosted proxy with the lightweight Groundcover eBPF sensor.
+#
+#   helm install yuki-proxy yuki/proxy \
+#     -f charts/yuki/examples/values-groundcover-sensor.yaml \
+#     --set observability.groundcover.apiKey=gcik_xxx \
+#     --set app.container.env.PROXY_HOST=... \
+#     --set app.container.env.REDIS_HOST=...
+#
+# Pass the Groundcover ingestion key with --set (or a private -f file) — do NOT
+# commit it here. The chart creates the `groundcover-ingestion-key` Secret
+# (key INGESTION_KEY) which the sensor subchart consumes.
+
+observability:
+  backend: groundcoverSensor
+  groundcover:
+    endpoint: https://qkx2z3frg.platform.grcv.io
+    # apiKey: gcik_...        # set via --set, or use existingSecret below
+    # existingSecret:
+    #   name: groundcover-ingestion-key
+    #   key: INGESTION_KEY
+
+# eBPF sensor subchart ON for this backend (must match observability.backend).
+groundcover:
+  enabled: true
+  clusterId: yuki-proxy-demo
+  env: stg
+  # By default the sensor DaemonSet runs on all nodes. To pin it to the proxy's
+  # nodes (recommended when the proxy is constrained to a node pool), label
+  # those nodes and mirror the selector on both the proxy and the sensor:
+  #
+  #   kubectl label node <node> yuki.io/workload=true
+  #
+  # nodeSelector:                 # top-level: pins the proxy Deployment
+  #   yuki.io/workload: "true"
+  # groundcover:
+  #   agent:
+  #     nodeSelector:             # pins the sensor DaemonSet to the same nodes
+  #       yuki.io/workload: "true"
+  agent: {}

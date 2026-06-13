@@ -1,0 +1,25 @@
+Yuki Proxy "{{ .Values.app.name }}" deployed.
+
+Observability backend: {{ .Values.observability.backend }}
+  (the legacy Datadog Serilog sink is disabled — SERILOG_DATADOG_ENABLED=false)
+
+{{- if eq .Values.observability.backend "otlp" }}
+
+OTLP shipper:
+  - OpenTelemetry Collector:  {{ include "proxy.otelCollectorName" . }}
+  - Proxy emits OTLP to:      http://{{ include "proxy.otelCollectorName" . }}:{{ .Values.observability.otlp.httpPort }}
+  - Forwards to Groundcover:  {{ .Values.observability.groundcover.endpoint }}
+{{- else if eq .Values.observability.backend "groundcoverSensor" }}
+
+Groundcover eBPF sensor (BYOC):
+  - Sensor DaemonSet:   groundcover "agent" (clusterId: {{ .Values.groundcover.clusterId }})
+  - Ships to:           {{ .Values.groundcover.global.ingress.site }}
+{{- end }}
+
+{{- if not (or .Values.observability.groundcover.apiKey .Values.observability.groundcover.existingSecret.name) }}
+
+  ⚠  No Groundcover ingestion key configured. Telemetry will NOT be delivered.
+     Set one of:
+       --set observability.groundcover.apiKey=gcik_xxx
+       --set observability.groundcover.existingSecret.name=<secret> --set observability.groundcover.existingSecret.key=INGESTION_KEY
+{{- end }}
