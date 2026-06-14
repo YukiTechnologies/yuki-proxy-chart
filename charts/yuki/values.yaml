@@ -180,7 +180,7 @@ observability:
 
   # --- backend: otlp ---------------------------------------------------------
   otlp:
-    image: otel/opentelemetry-collector-contrib:0.116.0
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.0
     replicaCount: 1
     # Ports the collector listens on (OTLP receiver).
     grpcPort: 4317
