@@ -1,0 +1,16 @@
+# Staging environment overlay — override backend URLs and environment name.
+# Combine with either the otlp or groundcover-sensor observability overlay:
+#
+#   helm install yuki-proxy yuki/proxy \
+#     -f charts/yuki/examples/values-staging.yaml \
+#     -f charts/yuki/examples/values-otlp.yaml \          # or values-groundcover-sensor.yaml
+#     --set observability.groundcover.apiKey=gcik_xxx \
+#     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
+#     --set app.container.env.REDIS_HOST=<redis>:6379
+
+app:
+  container:
+    env:
+      ASPNETCORE_ENVIRONMENT: Staging
+      COMPUTE_HOST: https://stg.yukistaging.com
+      SYSTEM_HOST: https://stg.yukistaging.com

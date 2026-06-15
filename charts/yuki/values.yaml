@@ -7,6 +7,10 @@ app:
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
+      # Backend URLs. Override for non-prod environments, e.g.:
+      #   --set app.container.env.COMPUTE_HOST=https://stg.yukistaging.com
+      #   --set app.container.env.SYSTEM_HOST=https://stg.yukistaging.com
+      #   --set app.container.env.ASPNETCORE_ENVIRONMENT=Staging
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
       # SERILOG_DATADOG_ENABLED is no longer set here. The legacy Datadog Serilog
@@ -180,7 +184,12 @@ observability:
 
   # --- backend: otlp ---------------------------------------------------------
   otlp:
-    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.116.0
+    # k8s distro has everything this pipeline needs (otlp / batch / otlphttp) and
+    # is far smaller than -contrib. NOTE: 0.116.0 ships a broken arm64 binary
+    # (dynamically linked, missing loader -> "exec ... no such file or directory");
+    # 0.127.0+ is fine. The container uses the image's own entrypoint, and the
+    # config is mounted at a distro-neutral /conf path, so any otelcol distro works.
+    image: otel/opentelemetry-collector-k8s:0.127.0
     replicaCount: 1
     # Ports the collector listens on (OTLP receiver).
     grpcPort: 4317
@@ -229,22 +238,28 @@ groundcover:
     groundcoverPredefinedTokenSecret:
       secretName: groundcover-ingestion-key
       secretKey: INGESTION_KEY
-  # The eBPF sensor DaemonSet. Defaults to all nodes (its built-in tolerations
-  # are `operator: Exists`). To pin it to the proxy's nodes, mirror the proxy's
-  # `.nodeSelector`, e.g.:
-  #   agent:
-  #     nodeSelector:
-  #       yuki.io/workload: "true"
-  agent: {}
-  # Right-size the vector log-aggregator for small demo clusters (mirrors
-  # terraform-infra staging). Bump for higher telemetry volume.
+  # eBPF sensor DaemonSet. Pin it to the same nodes as the proxy by mirroring
+  # the top-level .nodeSelector here. The sensor will then only run (and
+  # therefore only report to Groundcover) on those nodes — so GC shows exactly
+  # the nodes hosting the proxy, nothing else.
+  # When nodeSelector is empty the sensor runs on every node in the cluster.
+  agent:
+    nodeSelector: {}
+    # Anti-affinity: don't co-schedule two sensor pods on the same node
+    # (the DaemonSet already guarantees one-per-node, so this is optional).
+    affinity: {}
+  # vector: disabled — in BYOC mode the eBPF sensor ships directly to
+  # Groundcover without needing the in-cluster log aggregator.
   vector:
-    replicas: 1
+    enabled: false
+  # k8s-watcher: no `enabled` toggle exists in this chart (verified 1.11.852–
+  # 1.11.997). Set minimum resources so it schedules without pressure but
+  # consumes negligible capacity on a demo node.
+  k8sWatcher:
     resources:
       requests:
-        cpu: 50m
-        memory: 256Mi
+        cpu: 10m
+        memory: 32Mi
       limits:
-        memory: 512Mi
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        cpu: 50m
+        memory: 64Mi

@@ -5,6 +5,7 @@ forwards traces / logs / metrics to Yuki's Groundcover (BYOC). Replaces the
 legacy Datadog Serilog path. The proxy is wired to emit to it via the OTEL_*
 env vars set in the Deployment (used once app-side OTLP instrumentation lands).
 */ -}}
+{{- include "proxy.observability.validate" . -}}
 {{- if eq .Values.observability.backend "otlp" }}
 {{- $name := include "proxy.otelCollectorName" . }}
 {{- $gc := .Values.observability.groundcover }}
@@ -102,7 +103,7 @@ spec:
       labels:
         app: {{ $name }}
       annotations:
-        checksum/config: {{ tpl (toYaml .Values.observability.otlp) . | sha256sum }}
+        checksum/config: {{ list (toYaml .Values.observability.otlp) (toYaml .Values.observability.groundcover) | join "" | sha256sum }}
     spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -117,13 +118,14 @@ spec:
           image: {{ .Values.observability.otlp.image }}
           imagePullPolicy: IfNotPresent
           args:
-            - --config=/etc/otelcol-contrib/config.yaml
+            - --config=/conf/config.yaml
           env:
             - name: GROUNDCOVER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "proxy.groundcover.secretName" . }}
                   key: {{ include "proxy.groundcover.secretKey" . }}
+                  optional: true
           ports:
             - name: otlp-grpc
               containerPort: {{ .Values.observability.otlp.grpcPort }}
@@ -135,7 +137,7 @@ spec:
           {{- end }}
           volumeMounts:
             - name: config
-              mountPath: /etc/otelcol-contrib
+              mountPath: /conf
       volumes:
         - name: config
           configMap:

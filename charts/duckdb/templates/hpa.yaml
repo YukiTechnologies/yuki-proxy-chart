@@ -1,8 +1,9 @@
-{{- if .Values.hpa.enabled }}
+{{- if and .Values.app.enabled .Values.hpa.enabled }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Values.app.name }}
+  namespace: yuki-duckdb
   labels:
     app: {{ .Values.app.name }}
 spec:

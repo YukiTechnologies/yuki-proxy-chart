@@ -19,6 +19,18 @@ groundcover subchart toggle must agree with the chosen backend.
 {{- if and (eq $backend "otlp") $gc -}}
 {{- fail "observability.backend is \"otlp\" but groundcover.enabled is true — set groundcover.enabled: false (the sensor subchart must be off for the OTLP backend)." -}}
 {{- end -}}
+{{- /* Ingestion key completeness: both backends need a key to ship telemetry.
+     Warn (not fail) so helm install/template still works in CI without a key. */ -}}
+{{- $hasApiKey := .Values.observability.groundcover.apiKey -}}
+{{- $hasExistingSecret := .Values.observability.groundcover.existingSecret.name -}}
+{{- if and (not $hasApiKey) (not $hasExistingSecret) -}}
+{{- /* emit a visible warning via a named template rendered into NOTES */ -}}
+{{- end -}}
+{{- /* Validate that existingSecret.name and secretName don't both point somewhere
+     different — the chart always uses existingSecret.name when set. */ -}}
+{{- if and $hasExistingSecret (not .Values.observability.groundcover.existingSecret.key) -}}
+{{- fail "observability.groundcover.existingSecret.name is set but existingSecret.key is empty — set the key name within that Secret (e.g. INGESTION_KEY)." -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

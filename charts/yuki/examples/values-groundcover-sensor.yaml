@@ -1,14 +1,21 @@
 # Demo overlay: self-hosted proxy with the lightweight Groundcover eBPF sensor.
 #
+#   # 1. Label the node(s) you want the proxy + sensor to share:
+#   kubectl label node <node-name> yuki.io/workload=proxy
+#
+#   # 2. Install:
 #   helm install yuki-proxy yuki/proxy \
 #     -f charts/yuki/examples/values-groundcover-sensor.yaml \
 #     --set observability.groundcover.apiKey=gcik_xxx \
-#     --set app.container.env.PROXY_HOST=... \
-#     --set app.container.env.REDIS_HOST=...
+#     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
+#     --set app.container.env.REDIS_HOST=<redis-host>:6379
 #
-# Pass the Groundcover ingestion key with --set (or a private -f file) — do NOT
-# commit it here. The chart creates the `groundcover-ingestion-key` Secret
-# (key INGESTION_KEY) which the sensor subchart consumes.
+#   # 3. Disable k8s-watcher (no values toggle — scale post-install; survives upgrades
+#   #    because the chart template declares no spec.replicas for that Deployment):
+#   kubectl scale deploy k8s-watcher -n <namespace> --replicas=0
+#
+# The sensor DaemonSet runs ONLY on nodes labeled yuki.io/workload=proxy, so
+# Groundcover shows only those nodes (the proxy's nodes), not the whole cluster.
 
 observability:
   backend: groundcoverSensor
@@ -19,21 +26,28 @@ observability:
     #   name: groundcover-ingestion-key
     #   key: INGESTION_KEY
 
-# eBPF sensor subchart ON for this backend (must match observability.backend).
+# Pin the proxy Deployment to labeled nodes.
+# Mirror the same label on groundcover.agent.nodeSelector so the sensor
+# DaemonSet follows — and Groundcover therefore only sees those nodes.
+nodeSelector:
+  yuki.io/workload: proxy
+
+# eBPF sensor subchart ON (must match observability.backend: groundcoverSensor).
 groundcover:
   enabled: true
   clusterId: yuki-proxy-demo
   env: stg
-  # By default the sensor DaemonSet runs on all nodes. To pin it to the proxy's
-  # nodes (recommended when the proxy is constrained to a node pool), label
-  # those nodes and mirror the selector on both the proxy and the sensor:
-  #
-  #   kubectl label node <node> yuki.io/workload=true
-  #
-  # nodeSelector:                 # top-level: pins the proxy Deployment
-  #   yuki.io/workload: "true"
-  # groundcover:
-  #   agent:
-  #     nodeSelector:             # pins the sensor DaemonSet to the same nodes
-  #       yuki.io/workload: "true"
-  agent: {}
+  agent:
+    nodeSelector:
+      yuki.io/workload: proxy
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: groundcover-sensor
+              topologyKey: kubernetes.io/hostname
+  vector:
+    enabled: false
