@@ -7,16 +7,9 @@ app:
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
-      # Backend URLs. Override for non-prod environments, e.g.:
-      #   --set app.container.env.COMPUTE_HOST=https://stg.yukistaging.com
-      #   --set app.container.env.SYSTEM_HOST=https://stg.yukistaging.com
-      #   --set app.container.env.ASPNETCORE_ENVIRONMENT=Staging
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
-      # SERILOG_DATADOG_ENABLED is no longer set here. The legacy Datadog Serilog
-      # sink is replaced by the `observability` block below, which drives this env
-      # var off the selected backend (always disabled). Re-add it here only to
-      # force-restore Datadog logging.
+      # SERILOG_DATADOG_ENABLED is driven off observability.backend (always off).
       PROXY_HOST:
       REDIS_HOST:
       HEALTH_CHECK_REDIS_TIMEOUT_MS: 200
@@ -106,11 +99,7 @@ resources:
 affinity: { }
 tolerations: [ ]
 
-# Pin the proxy pods to a specific set of nodes. When using the Groundcover
-# sensor backend you can mirror this same selector under
-# `groundcover.agent.nodeSelector` so the eBPF DaemonSet lands on exactly the
-# nodes the proxy runs on (a DaemonSet can't follow an HPA-scaled Deployment
-# otherwise). Leave empty to schedule the proxy anywhere.
+# Pin the proxy pods to specific nodes. Empty = schedule anywhere.
 nodeSelector: { }
 
 topologySpreadConstraints: []
@@ -135,63 +124,34 @@ external-secrets:
   serviceAccount:
     create: true
 
-# ---------------------------------------------------------------------------
-# Observability
-# ---------------------------------------------------------------------------
-# Self-hosted proxies ship telemetry to Yuki's Groundcover (BYOC) instead of
-# Datadog. Exactly ONE of two backends is deployed with the proxy — this is the
-# single knob the UI exposes:
-#
-#   otlp             -> deploy an OpenTelemetry Collector alongside the proxy
-#                       that receives OTLP and forwards traces/logs/metrics to
-#                       Groundcover. Lightest footprint (one small Deployment);
-#                       no node-level privileges. The proxy is wired to emit to
-#                       it (OTEL_* env vars) for when app-side OTLP lands.
-#
-#   groundcoverSensor-> deploy the lightweight Groundcover eBPF sensor
-#                       (groundcover subchart, agent DaemonSet) in BYOC mode.
-#                       Captures the proxy's traffic with zero app changes, but
-#                       needs a DaemonSet + node access. Requires also setting
-#                       `groundcover.enabled: true` (the subchart toggle);
-#                       the chart fails to render if the two disagree.
-#
-# Selecting either backend disables the legacy Datadog Serilog sink
-# (SERILOG_DATADOG_ENABLED=false) on the proxy.
+# Groundcover ingestion key — set once here (or via --set / private file;
+# never commit). Shared with the subchart (sensor auth) and read by the parent
+# (OTLP collector Secret). Name must stay `groundcover_token` — the subchart
+# reads that key.
+global:
+  groundcover_token: ""
+
+# Observability backend shipped with the proxy — exactly one. Either disables
+# the legacy Datadog Serilog sink (SERILOG_DATADOG_ENABLED=false).
+#   groundcoverSensor: eBPF sensor (subchart); off until groundcover.enabled=true.
+#   otlp:              OTel Collector that forwards OTLP to Groundcover.
 observability:
-  # "otlp" | "groundcoverSensor"
-  backend: otlp
+  backend: groundcoverSensor
 
-  # Shared Groundcover ingestion settings — used by BOTH backends.
   groundcover:
-    # BYOC ingestion endpoint. otlp backend wants the full URL; the sensor
-    # subchart wants the bare host (chart strips the scheme automatically).
+    # BYOC endpoint. otlp wants the URL; the sensor subchart the bare host.
     endpoint: https://qkx2z3frg.platform.grcv.io
-    # Ingestion key. For a quick demo set `apiKey` inline (the chart creates a
-    # Secret named `secretName` from it). For anything real, leave apiKey empty
-    # and point `existingSecret` at a Secret you manage (e.g. via
-    # external-secrets), mirroring terraform-infra's
-    # groundcover-ingestion-key / INGESTION_KEY.
-    # !! Do not commit a real key to git — pass it with --set or a local -f file.
-    apiKey: ""
+    # Use a Secret you manage instead of global.groundcover_token.
     existingSecret:
-      name: ""            # e.g. groundcover-ingestion-key
+      name: ""
       key: INGESTION_KEY
-    # Name of the Secret the chart creates from `apiKey` (when no existingSecret
-    # is given). The groundcover subchart below references this same name.
     secretName: groundcover-ingestion-key
-    # Logical environment name shown in Groundcover. Defaults to the release name.
-    envName: ""
+    envName: ""         # Groundcover env name; defaults to the release name
 
-  # --- backend: otlp ---------------------------------------------------------
   otlp:
-    # k8s distro has everything this pipeline needs (otlp / batch / otlphttp) and
-    # is far smaller than -contrib. NOTE: 0.116.0 ships a broken arm64 binary
-    # (dynamically linked, missing loader -> "exec ... no such file or directory");
-    # 0.127.0+ is fine. The container uses the image's own entrypoint, and the
-    # config is mounted at a distro-neutral /conf path, so any otelcol distro works.
+    # k8s distro has otlp/batch/otlphttp; pin >= 0.127.0 (older arm64 won't exec).
     image: otel/opentelemetry-collector-k8s:0.127.0
     replicaCount: 1
-    # Ports the collector listens on (OTLP receiver).
     grpcPort: 4317
     httpPort: 4318
     resources:
@@ -200,61 +160,41 @@ observability:
         memory: 128Mi
       limits:
         memory: 256Mi
-    # Set to a full collector config (object) to completely override the
-    # chart-rendered default pipeline. Leave null to use the default below:
-    # receivers.otlp -> processors.batch -> exporters.otlphttp/groundcover
-    # for traces, logs and metrics.
-    configOverride: null
+    configOverride: null   # full collector config object; null = chart default
 
-# ---------------------------------------------------------------------------
-# Groundcover subchart overrides (backend: groundcoverSensor)
-# ---------------------------------------------------------------------------
-# These are passed verbatim to the groundcover subchart (Helm merges subchart
-# values statically — the parent chart cannot compute them at render time), so
-# anything the sensor needs must be a literal value here.
-#
-# `enabled` is the subchart condition: keep it false for the otlp backend, set
-# it true for the sensor (and set observability.backend: groundcoverSensor to
-# match — the chart refuses to render if the two disagree).
-#
-# Defaults below mirror terraform-infra's proven BYOC setup: no in-cluster
-# backend, ship to Yuki's Groundcover SaaS, ingestion key from the Secret the
-# parent chart creates (observability.groundcover.secretName).
+# Groundcover subchart overrides (sensor backend). Passed verbatim — the parent
+# can't compute these at render time. Defaults set BYOC mode (no in-cluster
+# backend, ship to Yuki's Groundcover); token comes from global.groundcover_token.
 groundcover:
+  # Subchart toggle. The overlay sets this true (with clusterId) to deploy the
+  # sensor; backend stays groundcoverSensor either way.
   enabled: false
-  # Identifies this install in Groundcover — give each customer/cluster a
-  # unique value (e.g. yuki-proxy-<customer>).
-  clusterId: yuki-proxy
+  clusterId: yuki-proxy   # unique per install, e.g. yuki-proxy-<customer>
   env: prod
   global:
     backend:
-      # false = BYOC: no in-cluster backend, ship to Yuki's Groundcover SaaS.
-      enabled: false
+      enabled: false      # BYOC: ship to Yuki's Groundcover, no in-cluster backend
     ingress:
-      # Bare host (no scheme) — must match observability.groundcover.endpoint.
-      site: qkx2z3frg.platform.grcv.io
-    # Reuse the same ingestion-key Secret the parent chart manages. Keep
-    # secretName in sync with observability.groundcover.secretName.
-    groundcoverPredefinedTokenSecret:
-      secretName: groundcover-ingestion-key
-      secretKey: INGESTION_KEY
-  # eBPF sensor DaemonSet. Pin it to the same nodes as the proxy by mirroring
-  # the top-level .nodeSelector here. The sensor will then only run (and
-  # therefore only report to Groundcover) on those nodes — so GC shows exactly
-  # the nodes hosting the proxy, nothing else.
-  # When nodeSelector is empty the sensor runs on every node in the cluster.
+      site: qkx2z3frg.platform.grcv.io   # bare host; matches observability endpoint
+    # For the existing-Secret path, leave global.groundcover_token empty and set:
+    # groundcoverPredefinedTokenSecret:
+    #   secretName: groundcover-ingestion-key
+    #   secretKey: INGESTION_KEY
+  # Sensor auto-co-locates with the proxy: each pod schedules only onto a node
+  # running a yuki-proxy pod (Pending elsewhere). No node labels needed.
+  # Update the selector if you override app.name; set agent.affinity: {} for all nodes.
   agent:
-    nodeSelector: {}
-    # Anti-affinity: don't co-schedule two sensor pods on the same node
-    # (the DaemonSet already guarantees one-per-node, so this is optional).
-    affinity: {}
-  # vector: disabled — in BYOC mode the eBPF sensor ships directly to
-  # Groundcover without needing the in-cluster log aggregator.
+    affinity:
+      podAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: yuki-proxy
+            topologyKey: kubernetes.io/hostname
   vector:
-    enabled: false
-  # k8s-watcher: no `enabled` toggle exists in this chart (verified 1.11.852–
-  # 1.11.997). Set minimum resources so it schedules without pressure but
-  # consumes negligible capacity on a demo node.
+    enabled: false        # not needed in BYOC; sensor ships directly
+  # k8s-watcher: REQUIRED for Groundcover to attribute traffic to workloads
+  # (no enable toggle in the subchart); resources trimmed to fit small nodes.
   k8sWatcher:
     resources:
       requests:

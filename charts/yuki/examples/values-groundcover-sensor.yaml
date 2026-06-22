@@ -1,53 +1,16 @@
-# Demo overlay: self-hosted proxy with the lightweight Groundcover eBPF sensor.
+# Example: self-hosted proxy with the lightweight Groundcover eBPF sensor.
+# (groundcoverSensor is the chart default; this overlay just enables it.)
 #
-#   # 1. Label the node(s) you want the proxy + sensor to share:
-#   kubectl label node <node-name> yuki.io/workload=proxy
-#
-#   # 2. Install:
+#   # Supply the ingestion key ONCE via global.groundcover_token (never commit it).
 #   helm install yuki-proxy yuki/proxy \
-#     -f charts/yuki/examples/values-groundcover-sensor.yaml \
-#     --set observability.groundcover.apiKey=gcik_xxx \
+#     -f values-groundcover-sensor.yaml \
+#     --set global.groundcover_token=<key> \
 #     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
 #     --set app.container.env.REDIS_HOST=<redis-host>:6379
 #
-#   # 3. Disable k8s-watcher (no values toggle — scale post-install; survives upgrades
-#   #    because the chart template declares no spec.replicas for that Deployment):
-#   kubectl scale deploy k8s-watcher -n <namespace> --replicas=0
-#
-# The sensor DaemonSet runs ONLY on nodes labeled yuki.io/workload=proxy, so
-# Groundcover shows only those nodes (the proxy's nodes), not the whole cluster.
-
-observability:
-  backend: groundcoverSensor
-  groundcover:
-    endpoint: https://qkx2z3frg.platform.grcv.io
-    # apiKey: gcik_...        # set via --set, or use existingSecret below
-    # existingSecret:
-    #   name: groundcover-ingestion-key
-    #   key: INGESTION_KEY
-
-# Pin the proxy Deployment to labeled nodes.
-# Mirror the same label on groundcover.agent.nodeSelector so the sensor
-# DaemonSet follows — and Groundcover therefore only sees those nodes.
-nodeSelector:
-  yuki.io/workload: proxy
-
-# eBPF sensor subchart ON (must match observability.backend: groundcoverSensor).
+# The sensor auto-co-locates with the proxy (pod affinity in the chart defaults) —
+# no node labels needed, and Groundcover sees only the proxy's nodes.
 groundcover:
   enabled: true
   clusterId: yuki-proxy-demo
   env: stg
-  agent:
-    nodeSelector:
-      yuki.io/workload: proxy
-    affinity:
-      podAntiAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: groundcover-sensor
-              topologyKey: kubernetes.io/hostname
-  vector:
-    enabled: false

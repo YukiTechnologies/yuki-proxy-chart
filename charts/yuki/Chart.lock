@@ -4,6 +4,6 @@ dependencies:
   version: 0.19.1
 - name: groundcover
   repository: https://helm.groundcover.com
-  version: 1.11.852
-digest: sha256:f61b157bd29d5e451f2b3b13f2009cc589a3bd9eb5d0e094245482eceb913eff
-generated: "2026-06-14T01:25:17.246029+05:30"
+  version: 1.11.997
+digest: sha256:5c7e32fdc6bad1c1dbffb65ae54eb227ececcc4ae2d1835c8e917a51c6e0d7c2
+generated: "2026-06-15T15:57:36.97033+05:30"

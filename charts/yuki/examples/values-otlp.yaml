@@ -1,24 +1,22 @@
-# Demo overlay: self-hosted proxy with the OTLP shipper backend.
+# Example: self-hosted proxy with the OTLP shipper backend (overrides the
+# groundcoverSensor default).
 #
 #   helm install yuki-proxy yuki/proxy \
-#     -f charts/yuki/examples/values-otlp.yaml \
-#     --set observability.groundcover.apiKey=gcik_xxx \
-#     --set app.container.env.PROXY_HOST=... \
-#     --set app.container.env.REDIS_HOST=...
+#     -f values-otlp.yaml \
+#     --set global.groundcover_token=<key> \
+#     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
+#     --set app.container.env.REDIS_HOST=<redis-host>:6379
 #
-# Pass the Groundcover ingestion key with --set (or a private -f file) — do NOT
-# commit it here.
-
+# Supply the ingestion key via --set or a private -f file — never commit it.
 observability:
   backend: otlp
   groundcover:
     endpoint: https://qkx2z3frg.platform.grcv.io
-    # apiKey: gcik_...        # set via --set, or use existingSecret below
+    # Or reference a Secret you manage instead of global.groundcover_token:
     # existingSecret:
     #   name: groundcover-ingestion-key
     #   key: INGESTION_KEY
     envName: yuki-proxy-demo
 
-# Sensor subchart stays off for the OTLP backend.
 groundcover:
-  enabled: false
+  enabled: false   # subchart off for the OTLP backend

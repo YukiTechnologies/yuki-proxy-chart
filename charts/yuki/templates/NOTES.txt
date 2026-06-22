@@ -16,10 +16,10 @@ Groundcover eBPF sensor (BYOC):
   - Ships to:           {{ .Values.groundcover.global.ingress.site }}
 {{- end }}
 
-{{- if not (or .Values.observability.groundcover.apiKey .Values.observability.groundcover.existingSecret.name) }}
+{{- if not (or .Values.global.groundcover_token .Values.observability.groundcover.existingSecret.name) }}
 
   ⚠  No Groundcover ingestion key configured. Telemetry will NOT be delivered.
      Set one of:
-       --set observability.groundcover.apiKey=gcik_xxx
+       --set global.groundcover_token=<key>
        --set observability.groundcover.existingSecret.name=<secret> --set observability.groundcover.existingSecret.key=INGESTION_KEY
 {{- end }}

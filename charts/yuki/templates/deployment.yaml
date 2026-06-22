@@ -80,10 +80,7 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
-            {{- /* Observability backend wiring. Replaces the legacy Datadog
-                   Serilog sink (SERILOG_DATADOG_ENABLED=false). Placed before
-                   the app.container.env range so an explicit override there
-                   still wins (last-defined env var takes effect). */}}
+            {{- /* Before the app.container.env range so an explicit override wins. */}}
             - name: SERILOG_DATADOG_ENABLED
               value: "false"
             {{- if eq .Values.observability.backend "otlp" }}

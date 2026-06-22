@@ -1,10 +1,5 @@
-{{- /*
-OTLP shipper (observability.backend == "otlp").
-An OpenTelemetry Collector deployed alongside the proxy that receives OTLP and
-forwards traces / logs / metrics to Yuki's Groundcover (BYOC). Replaces the
-legacy Datadog Serilog path. The proxy is wired to emit to it via the OTEL_*
-env vars set in the Deployment (used once app-side OTLP instrumentation lands).
-*/ -}}
+{{- /* OTLP shipper: OTel Collector that forwards OTLP to Groundcover (BYOC).
+       Only for observability.backend == "otlp". */ -}}
 {{- include "proxy.observability.validate" . -}}
 {{- if eq .Values.observability.backend "otlp" }}
 {{- $name := include "proxy.otelCollectorName" . }}
