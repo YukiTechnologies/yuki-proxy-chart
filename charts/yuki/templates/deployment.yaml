@@ -80,9 +80,13 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
-            {{- /* Before the app.container.env range so an explicit override wins. */}}
+            {{- /* Default the legacy Datadog sink off. Only inject when the user
+                   hasn't set it in app.container.env — emitting it twice creates a
+                   duplicate env name that breaks strategic-merge apply (ArgoCD/kubectl). */}}
+            {{- if not (hasKey (.Values.app.container.env | default dict) "SERILOG_DATADOG_ENABLED") }}
             - name: SERILOG_DATADOG_ENABLED
               value: "false"
+            {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://{{ include "proxy.otelCollectorName" . }}:{{ .Values.observability.otlp.httpPort }}"
