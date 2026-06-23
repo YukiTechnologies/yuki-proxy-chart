@@ -1,0 +1,7 @@
+# Staging overlay — combine with values-groundcover-sensor.yaml or values-otlp.yaml.
+app:
+  container:
+    env:
+      ASPNETCORE_ENVIRONMENT: Staging
+      COMPUTE_HOST: https://stg.yukistaging.com
+      SYSTEM_HOST: https://stg.yukistaging.com

@@ -1,3 +1,4 @@
+{{- include "proxy.observability.validate" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,6 +48,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
@@ -75,6 +80,23 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
+            {{- /* Default the legacy Datadog sink off. Only inject when the user
+                   hasn't set it in env or envFromSecrets — a duplicate env name
+                   breaks strategic-merge apply (ArgoCD/kubectl). */}}
+            {{- if not (or (hasKey (.Values.app.container.env | default dict) "SERILOG_DATADOG_ENABLED") (hasKey (.Values.app.container.envFromSecrets | default dict) "SERILOG_DATADOG_ENABLED")) }}
+            - name: SERILOG_DATADOG_ENABLED
+              value: "false"
+            {{- end }}
+            {{- if eq .Values.observability.backend "otlp" }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://{{ include "proxy.otelCollectorName" . }}:{{ .Values.observability.otlp.httpPort }}"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "http/protobuf"
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.app.name | quote }}
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.version=$(PROXY_VERSION),deployment.environment={{ .Values.app.container.env.ASPNETCORE_ENVIRONMENT | lower }}"
+            {{- end }}
             {{- range $key, $value := .Values.app.container.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}

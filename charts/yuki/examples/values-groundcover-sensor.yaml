@@ -1,0 +1,16 @@
+# Example: self-hosted proxy with the lightweight Groundcover eBPF sensor.
+# (groundcoverSensor is the chart default; this overlay just enables it.)
+#
+#   # Supply the ingestion key ONCE via global.groundcover_token (never commit it).
+#   helm install yuki-proxy yuki/proxy \
+#     -f values-groundcover-sensor.yaml \
+#     --set global.groundcover_token=<key> \
+#     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
+#     --set app.container.env.REDIS_HOST=<redis-host>:6379
+#
+# The sensor auto-co-locates with the proxy (pod affinity in the chart defaults) —
+# no node labels needed, and Groundcover sees only the proxy's nodes.
+groundcover:
+  enabled: true
+  clusterId: yuki-proxy-demo
+  env: stg

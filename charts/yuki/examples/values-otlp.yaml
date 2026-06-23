@@ -1,0 +1,22 @@
+# Example: self-hosted proxy with the OTLP shipper backend (overrides the
+# groundcoverSensor default).
+#
+#   helm install yuki-proxy yuki/proxy \
+#     -f values-otlp.yaml \
+#     --set global.groundcover_token=<key> \
+#     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
+#     --set app.container.env.REDIS_HOST=<redis-host>:6379
+#
+# Supply the ingestion key via --set or a private -f file — never commit it.
+observability:
+  backend: otlp
+  groundcover:
+    endpoint: https://qkx2z3frg.platform.grcv.io
+    # Or reference a Secret you manage instead of global.groundcover_token:
+    # existingSecret:
+    #   name: groundcover-ingestion-key
+    #   key: INGESTION_KEY
+    envName: yuki-proxy-demo
+
+groundcover:
+  enabled: false   # subchart off for the OTLP backend

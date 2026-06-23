@@ -1,0 +1,140 @@
+{{- /* OTLP shipper: OTel Collector that forwards OTLP to Groundcover (BYOC).
+       Only for observability.backend == "otlp". */ -}}
+{{- include "proxy.observability.validate" . -}}
+{{- if eq .Values.observability.backend "otlp" }}
+{{- $name := include "proxy.otelCollectorName" . }}
+{{- $gc := .Values.observability.groundcover }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app.kubernetes.io/component: observability
+    app: {{ $name }}
+data:
+  config.yaml: |
+    {{- if .Values.observability.otlp.configOverride }}
+    {{- toYaml .Values.observability.otlp.configOverride | nindent 4 }}
+    {{- else }}
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:{{ .Values.observability.otlp.grpcPort }}
+          http:
+            endpoint: 0.0.0.0:{{ .Values.observability.otlp.httpPort }}
+    processors:
+      batch: {}
+    exporters:
+      otlphttp/groundcover:
+        endpoint: {{ $gc.endpoint }}
+        headers:
+          Authorization: "Bearer ${env:GROUNDCOVER_API_KEY}"
+          {{- with $gc.envName }}
+          x-groundcover-env-name: {{ . | quote }}
+          {{- end }}
+        compression: gzip
+        timeout: 30s
+        retry_on_failure:
+          enabled: true
+          initial_interval: 5s
+          max_interval: 30s
+          max_elapsed_time: 300s
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/groundcover]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/groundcover]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/groundcover]
+    {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app.kubernetes.io/component: observability
+    app: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $name }}
+  ports:
+    - name: otlp-grpc
+      port: {{ .Values.observability.otlp.grpcPort }}
+      targetPort: {{ .Values.observability.otlp.grpcPort }}
+    - name: otlp-http
+      port: {{ .Values.observability.otlp.httpPort }}
+      targetPort: {{ .Values.observability.otlp.httpPort }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app.kubernetes.io/component: observability
+    app: {{ $name }}
+spec:
+  replicas: {{ .Values.observability.otlp.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+      annotations:
+        checksum/config: {{ list (toYaml .Values.observability.otlp) (toYaml .Values.observability.groundcover) | join "" | sha256sum }}
+    spec:
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: otel-collector
+          image: {{ .Values.observability.otlp.image }}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=/conf/config.yaml
+          env:
+            - name: GROUNDCOVER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "proxy.groundcover.secretName" . }}
+                  key: {{ include "proxy.groundcover.secretKey" . }}
+                  optional: true
+          ports:
+            - name: otlp-grpc
+              containerPort: {{ .Values.observability.otlp.grpcPort }}
+            - name: otlp-http
+              containerPort: {{ .Values.observability.otlp.httpPort }}
+          {{- with .Values.observability.otlp.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+      volumes:
+        - name: config
+          configMap:
+            name: {{ $name }}
+{{- end }}

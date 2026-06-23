@@ -8,3 +8,10 @@ dependencies:
     version: "0.19.1"
     repository: https://charts.external-secrets.io
     condition: externalSecrets.operator.enabled
+  # Lightweight Groundcover eBPF sensor. Pulled into every package but only
+  # rendered when observability.backend == "groundcoverSensor" (which flips
+  # groundcover.enabled). See the `observability` / `groundcover` blocks in values.yaml.
+  - name: groundcover
+    version: "1.11.997"
+    repository: https://helm.groundcover.com
+    condition: groundcover.enabled

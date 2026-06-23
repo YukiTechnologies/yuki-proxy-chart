@@ -2,5 +2,8 @@ dependencies:
 - name: external-secrets
   repository: https://charts.external-secrets.io
   version: 0.19.1
-digest: sha256:1cbb3e23556736631b9a53d1b3d6f1be6ed988eb3ec0c25c57ec2fc06b6d126c
-generated: "2025-08-21T11:56:50.506429+03:00"
+- name: groundcover
+  repository: https://helm.groundcover.com
+  version: 1.11.997
+digest: sha256:5c7e32fdc6bad1c1dbffb65ae54eb227ececcc4ae2d1835c8e917a51c6e0d7c2
+generated: "2026-06-15T15:57:36.97033+05:30"

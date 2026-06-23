@@ -30,6 +30,7 @@ jobs:
       - name: Add Helm repositories
         run: |
           helm repo add external-secrets https://charts.external-secrets.io
+          helm repo add groundcover https://helm.groundcover.com
           helm repo update
 
       - name: Determine version strategy
