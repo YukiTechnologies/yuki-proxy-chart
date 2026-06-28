@@ -72,6 +72,8 @@ spec:
               value: "5162"
             - name: SNOWFLAKE_PROTOCOL
               value: "http"
+            - name: HOME
+              value: /tmp
             - name: AWS_REGION
               value: {{ .Values.app.container.env.AWS_REGION | default "eu-north-1" | quote }}
             - name: YUKI_CLIENT_ID
