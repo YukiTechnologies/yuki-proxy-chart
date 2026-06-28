@@ -14,6 +14,37 @@ spec:
   rules:
     - http:
         paths:
+          {{- if .Values.mcp.enabled }}
+          # MCP paths must precede / so the ALB matches them first (prefix specificity).
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          - path: /oauth
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          - path: /register
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:

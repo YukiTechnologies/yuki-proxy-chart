@@ -1,0 +1,28 @@
+{{- if and .Values.mcp.enabled .Values.mcp.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: yuki-mcp
+  labels:
+    app: yuki-mcp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: yuki-mcp
+  minReplicas: {{ .Values.mcp.hpa.minReplicas }}
+  maxReplicas: {{ .Values.mcp.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.mcp.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.mcp.hpa.targetMemoryUtilizationPercentage }}
+{{- end }}
