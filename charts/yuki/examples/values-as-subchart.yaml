@@ -1,0 +1,41 @@
+# Example: consuming this chart as a SUBCHART from your own umbrella chart.
+#
+# In your umbrella Chart.yaml, the dependency key is the chart NAME ("proxy")
+# unless you set an alias:
+#
+#   dependencies:
+#     - name: proxy
+#       version: 0.0.119
+#       repository: https://<yuki-helm-repo>
+#       # alias: yuki-proxy   # only if you want the values key to be "yuki-proxy"
+#
+# Then this file is your umbrella values.yaml. Two rules that trip people up:
+#   1. global.groundcover_token goes at the UMBRELLA TOP LEVEL (below) — NOT under
+#      proxy:. It's a Helm global; that's how it reaches the groundcover sub-subchart.
+#   2. Everything else nests under the dependency key ("proxy:" here).
+
+# Helm global — top level. Never commit a real key; pass via --set or a private file.
+global:
+  groundcover_token: ""
+
+proxy:
+  app:
+    container:
+      image: <registry>/yuki-proxy:<tag>
+      env:
+        PROXY_HOST: https://<account>.snowflakecomputing.com
+        REDIS_HOST: <redis-host>:6379
+
+  # Pin the proxy AND the sensor to the same node(s). nodeSelector must be set in
+  # BOTH places below — groundcover's sensor reads no shared/global nodeSelector,
+  # so a single value can't reach both. First label the nodes:
+  #   kubectl label node <node> yuki.io/workload=proxy
+  nodeSelector:
+    yuki.io/workload: proxy            # proxy pods
+
+  groundcover:
+    enabled: true
+    clusterId: <customer>
+    agent:
+      nodeSelector:
+        yuki.io/workload: proxy        # sensor pods — keep identical to the above
