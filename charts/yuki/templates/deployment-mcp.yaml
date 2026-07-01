@@ -66,6 +66,8 @@ spec:
               value: {{ .Values.app.container.env.ACCOUNT_GUID | quote }}
             - name: SNOWFLAKE_ACCOUNT
               value: {{ .Values.mcp.snowflakeAccount | quote }}
+            - name: MCP_INTEGRATION_NAME
+              value: {{ .Values.mcp.integrationName | quote }}
             - name: SNOWFLAKE_HOST
               value: "yuki-proxy"
             - name: SNOWFLAKE_PORT
