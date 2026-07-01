@@ -14,6 +14,26 @@ spec:
   rules:
     - http:
         paths:
+          {{- if .Values.mcp.enabled }}
+          # yuki-mcp: OAuth flow + MCP endpoint live under /mcp, but RFC 8414/9728
+          # discovery must resolve at the origin root, so route both prefixes.
+          # ponytail: /.well-known is greedy — fine here (ALB+ACM, no ACME challenge);
+          # narrow to the three oauth-*/openid-configuration paths if the app ever needs its own.
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:
