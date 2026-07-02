@@ -8,9 +8,14 @@
 #     --set app.container.env.PROXY_HOST=https://<account>.snowflakecomputing.com \
 #     --set app.container.env.REDIS_HOST=<redis-host>:6379
 #
-# The sensor auto-co-locates with the proxy (pod affinity in the chart defaults) —
-# no node labels needed, and Groundcover sees only the proxy's nodes.
+# By default the sensor runs on all non-Fargate nodes. To pin it to just the
+# proxy's nodes, label them and set the SAME nodeSelector on the proxy and the
+# sensor (see the nodeSelector keys below).
+nodeSelector: {}            # proxy pods, e.g. { yuki.io/workload: proxy }
 groundcover:
   enabled: true
   clusterId: yuki-proxy-demo
   env: stg
+  agent:
+    nodeSelector: {}        # sensor pods — set to the SAME labels as nodeSelector above
+                            # (must be set in both places; groundcover reads no shared global)

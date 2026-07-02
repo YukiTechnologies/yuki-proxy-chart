@@ -98,8 +98,12 @@ spec:
               value: "service.version=$(PROXY_VERSION),deployment.environment={{ .Values.app.container.env.ASPNETCORE_ENVIRONMENT | lower }}"
             {{- end }}
             {{- range $key, $value := .Values.app.container.env }}
+            {{- /* Skip null placeholders (e.g. PROXY_HOST:) — Helm 3 would
+                   render them as empty env vars, Helm 4 drops them. */}}
+            {{- if not (kindIs "invalid" $value) }}
             - name: {{ $key }}
               value: {{ $value | quote }}
+            {{- end }}
             {{- end }}
             {{- range $key, $value := .Values.app.container.envFromSecrets }}
             - name: {{ $key }}
