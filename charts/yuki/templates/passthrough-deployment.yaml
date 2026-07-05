@@ -18,16 +18,29 @@ spec:
         group: {{ .Values.app.group }}
     spec:
       terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
       containers:
         - name: passthrough
           image: {{ .Values.passthrough.image }}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: {{ .Values.passthrough.port }}
           volumeMounts:
             - name: nginx-conf
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: tmp
+              mountPath: /tmp
           {{- with .Values.passthrough.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -54,4 +67,8 @@ spec:
         - name: nginx-conf
           configMap:
             name: {{ .Values.app.name }}-passthrough
+        - name: cache
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
 {{- end }}
