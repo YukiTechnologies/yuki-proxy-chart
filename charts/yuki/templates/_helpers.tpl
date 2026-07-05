@@ -34,3 +34,13 @@
 INGESTION_KEY
 {{- end -}}
 {{- end -}}
+
+{{/* Snowflake account URL the passthrough forwards to, e.g. https://xyz.snowflakecomputing.com. */}}
+{{- define "proxy.passthrough.snowflakeUrl" -}}
+{{- .Values.passthrough.snowflakeHost | default .Values.app.container.env.PROXY_HOST -}}
+{{- end -}}
+
+{{/* Bare host[:port] for the Host header — Snowflake keys off this, not the scheme. */}}
+{{- define "proxy.passthrough.snowflakeHostHeader" -}}
+{{- (include "proxy.passthrough.snowflakeUrl" . | urlParse).host -}}
+{{- end -}}

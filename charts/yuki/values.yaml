@@ -89,6 +89,30 @@ proxyDeploymentType: self_hosted
 ingress:
   enabled: false
 
+# Minimal, dependency-free fallback that forwards straight to Snowflake with
+# the correct Host header — a bypass path for when Yuki Proxy (or one of its
+# dependencies) is unhealthy. Off by default and not wired into `ingress` yet;
+# that wiring (weighted ALB target groups) is separate infra-repo work.
+# See the "Yuki Proxy Bypass Options" design doc for the full rationale.
+passthrough:
+  enabled: false
+  replicaCount: 2
+  image: nginx:1.27-alpine
+  port: 8080
+  # Snowflake account URL to forward to, e.g. "https://xyz.snowflakecomputing.com".
+  # Defaults to the same host Yuki Proxy itself targets (app.container.env.PROXY_HOST)
+  # so there's one source of truth; override only if they should ever differ.
+  snowflakeHost: ""
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "25m"
+    limits:
+      memory: "64Mi"
+
 resources:
   requests:
     memory: "300Mi"

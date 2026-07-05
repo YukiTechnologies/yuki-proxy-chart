@@ -1,0 +1,57 @@
+{{- if .Values.passthrough.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-passthrough
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+spec:
+  replicas: {{ .Values.passthrough.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-passthrough
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-passthrough
+        group: {{ .Values.app.group }}
+    spec:
+      terminationGracePeriodSeconds: 15
+      containers:
+        - name: passthrough
+          image: {{ .Values.passthrough.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.passthrough.port }}
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          {{- with .Values.passthrough.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.passthrough.port }}
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.passthrough.port }}
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 1
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ .Values.app.name }}-passthrough
+{{- end }}
