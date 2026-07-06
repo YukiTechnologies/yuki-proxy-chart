@@ -88,6 +88,11 @@ spec:
                 secretKeyRef:
                   name: yuki-mcp-secrets
                   key: yuki-client-secret
+            - name: JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-secrets
+                  key: jwt-signing-key
           {{- with .Values.mcp.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
