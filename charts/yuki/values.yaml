@@ -220,7 +220,11 @@ mcp:
   # MCP is path-routed (/mcp, /oauth, /register, /.well-known) on the proxy
   # ingress and baseUrl points at the proxy host. When enabled, MCP owns the
   # whole `host` subdomain — set baseUrl to https://<host> to match.
-  host: ""                 # e.g. mcp.<namespace>.yukistaging.com; required when ingress.enabled
+  # Full MCP host, set per-tenant; required when ingress.enabled. Convention is
+  # mcp-<namespace>.<domain> (single label — the *.<domain> wildcard cert covers
+  # it), e.g. mcp-jsjvnsg-prod-aws-n-virginia.yukicomputing.com. A dotted
+  # mcp.<namespace>.<domain> is 2 labels deep and needs its own dedicated cert.
+  host: ""
   ingress:
     enabled: false
     className: alb         # falls back to .Values.ingress.className if empty
