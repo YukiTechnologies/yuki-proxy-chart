@@ -210,7 +210,7 @@ mcp:
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
   baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
-  platformUrl: "https://app.yukistaging.com"
+  platformUrl: "https://app.yukicomputing.com"  # prod default; override per-environment
   allowedRedirectUris: ""  # comma-separated; blank = allow any (dev only)
   corsAllowedOrigins: ""   # comma-separated; blank = wildcard (set explicitly in staging/prod)
   snowflakeAccount: ""     # Snowflake account id, e.g. jsjvnsg-staging
