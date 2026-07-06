@@ -66,6 +66,8 @@ spec:
               value: {{ .Values.app.container.env.ACCOUNT_GUID | quote }}
             - name: SNOWFLAKE_ACCOUNT
               value: {{ .Values.mcp.snowflakeAccount | quote }}
+            - name: MCP_INTEGRATION_NAME
+              value: {{ .Values.mcp.integrationName | quote }}
             - name: SNOWFLAKE_HOST
               value: "yuki-proxy"
             - name: SNOWFLAKE_PORT
@@ -86,6 +88,11 @@ spec:
                 secretKeyRef:
                   name: yuki-mcp-secrets
                   key: yuki-client-secret
+            - name: JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-secrets
+                  key: jwt-signing-key
           {{- with .Values.mcp.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

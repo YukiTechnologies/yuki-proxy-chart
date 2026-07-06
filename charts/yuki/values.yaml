@@ -214,6 +214,7 @@ mcp:
   allowedRedirectUris: ""  # comma-separated; blank = allow any (dev only)
   corsAllowedOrigins: ""   # comma-separated; blank = wildcard (set explicitly in staging/prod)
   snowflakeAccount: ""     # Snowflake account id, e.g. jsjvnsg-staging
+  integrationName: ""      # SystemManagement integration name for this account
   logLevel: "INFO"
   hpa:
     enabled: false
