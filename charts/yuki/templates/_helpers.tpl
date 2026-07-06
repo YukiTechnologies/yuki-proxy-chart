@@ -37,7 +37,7 @@ INGESTION_KEY
 
 {{/* Short env token for secret paths: staging→stg, production→prod, development→dev. */}}
 {{- define "mcp.envShort" -}}
-{{- $env := required "app.container.env.ENVIRONMENT is required when mcp.enabled" .Values.app.container.env.ENVIRONMENT -}}
+{{- $env := required "app.container.env.ENVIRONMENT is required when mcp.enabled" .Values.app.container.env.ENVIRONMENT | lower -}}
 {{- if   eq $env "staging"     -}}stg
 {{- else if eq $env "production"  -}}prod
 {{- else if eq $env "development" -}}dev
