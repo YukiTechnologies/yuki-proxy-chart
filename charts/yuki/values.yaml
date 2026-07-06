@@ -203,3 +203,27 @@ groundcover:
       limits:
         cpu: 50m
         memory: 64Mi
+
+# MCP server — gated, default off; existing deployments are unchanged.
+mcp:
+  enabled: false
+  container:
+    image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
+  baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
+  platformUrl: "https://app.yukicomputing.com"  # prod default; override per-environment
+  allowedRedirectUris: ""  # comma-separated; blank = allow any (dev only)
+  corsAllowedOrigins: ""   # comma-separated; blank = wildcard (set explicitly in staging/prod)
+  snowflakeAccount: ""     # Snowflake account id, e.g. jsjvnsg-staging
+  logLevel: "INFO"
+  hpa:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      memory: "512Mi"

@@ -1,0 +1,20 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: yuki-mcp
+  labels:
+    app.kubernetes.io/name: yuki-mcp
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app: yuki-mcp
+    group: {{ .Values.app.group }}
+spec:
+  type: ClusterIP
+  selector:
+    app: yuki-mcp
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP
+{{- end }}

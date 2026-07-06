@@ -1,0 +1,120 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yuki-mcp
+  labels:
+    app.kubernetes.io/name: yuki-mcp
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app: yuki-mcp
+    group: {{ .Values.app.group }}
+spec:
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  {{- if not .Values.mcp.hpa.enabled }}
+  replicas: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      app: yuki-mcp
+  template:
+    metadata:
+      labels:
+        app: yuki-mcp
+        group: {{ .Values.app.group }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: yuki-mcp
+          image: {{ tpl .Values.mcp.container.image . }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: ENVIRONMENT
+              value: {{ .Values.app.container.env.ENVIRONMENT | default "production" | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.mcp.logLevel | default "INFO" | quote }}
+            - name: YUKI_MCP_BASE_URL
+              value: {{ .Values.mcp.baseUrl | quote }}
+            - name: YUKI_PLATFORM_URL
+              value: {{ .Values.mcp.platformUrl | default "https://app.yukicomputing.com" | quote }}
+            - name: YUKI_ALLOWED_REDIRECT_URIS
+              value: {{ .Values.mcp.allowedRedirectUris | default "" | quote }}
+            - name: CORS_ALLOWED_ORIGINS
+              value: {{ .Values.mcp.corsAllowedOrigins | default "" | quote }}
+            - name: SYSTEM_API_URL
+              value: "http://system-api.yuki-compute:5194"
+            - name: SYSTEM_API_COMPANY_ID
+              value: {{ .Values.app.container.env.COMPANY_GUID | quote }}
+            - name: SYSTEM_API_ACCOUNT_ID
+              value: {{ .Values.app.container.env.ACCOUNT_GUID | quote }}
+            - name: SNOWFLAKE_ACCOUNT
+              value: {{ .Values.mcp.snowflakeAccount | quote }}
+            - name: SNOWFLAKE_HOST
+              value: "yuki-proxy"
+            - name: SNOWFLAKE_PORT
+              value: "5162"
+            - name: SNOWFLAKE_PROTOCOL
+              value: "http"
+            - name: HOME
+              value: /tmp
+            - name: AWS_REGION
+              value: {{ .Values.app.container.env.AWS_REGION | default "eu-north-1" | quote }}
+            - name: YUKI_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-secrets
+                  key: yuki-client-id
+            - name: YUKI_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-secrets
+                  key: yuki-client-secret
+          {{- with .Values.mcp.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
