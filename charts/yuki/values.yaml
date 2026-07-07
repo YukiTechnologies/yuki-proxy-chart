@@ -108,6 +108,22 @@ passthrough:
   replicaCount: 2
   image: nginx:1.27-alpine
   port: 8080
+  # auto: watcher controls the proxy Service selector based on health.
+  # forcePassthrough / forceProxy: watcher pins the selector and skips health checks —
+  # for a deliberate, GitOps-reviewable override. Read live from a mounted ConfigMap,
+  # so changing this value takes effect within one poll interval, no pod restart needed.
+  mode: auto
+  # Watches app.container's own /health/live and flips the proxy Service's selector to
+  # the passthrough pods after enough consecutive failures (Kubernetes-native, so it
+  # works the same regardless of what's in front — ALB, nginx-ingress, anything —
+  # unlike ALB-specific weighted target groups, which only cover fully-hosted).
+  watcher:
+    enabled: true
+    image: curlimages/curl:8.11.0
+    pollIntervalSeconds: 5
+    failureThreshold: 3
+    successThreshold: 3
+    healthPath: /health/live
   # Snowflake account URL to forward to, e.g. "https://xyz.snowflakecomputing.com".
   # Defaults to the same host Yuki Proxy itself targets (app.container.env.PROXY_HOST)
   # so there's one source of truth; override only if they should ever differ.
