@@ -68,7 +68,9 @@ spec:
           configMap:
             name: {{ .Values.app.name }}-passthrough
         - name: cache
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 64Mi
         - name: tmp
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: 16Mi
 {{- end }}

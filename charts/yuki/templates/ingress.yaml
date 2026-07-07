@@ -18,7 +18,11 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ .Values.app.name }}
+                name: {{ .Values.ingress.backend.serviceName | default .Values.app.name }}
                 port:
-                  number: {{ .Values.app.service.port }}
+                  {{- if .Values.ingress.backend.servicePortName }}
+                  name: {{ .Values.ingress.backend.servicePortName }}
+                  {{- else }}
+                  number: {{ .Values.ingress.backend.servicePortNumber | default .Values.app.service.port }}
+                  {{- end }}
 {{- end}}

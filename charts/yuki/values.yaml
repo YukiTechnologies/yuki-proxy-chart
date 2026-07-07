@@ -88,11 +88,20 @@ proxyDeploymentType: self_hosted
 
 ingress:
   enabled: false
+  # Overrides the Ingress rule's backend service/port. Empty by default (falls back to
+  # app.name / app.service.port, i.e. no behavior change). Set these to route through an
+  # ALB "actions." annotation (servicePortName: "use-annotation") for weighted bypass
+  # routing to the passthrough service below — that annotation itself is ALB-specific and
+  # lives in terraform-infra, not here, to keep this chart ingress-controller-agnostic.
+  backend:
+    serviceName: ""
+    servicePortName: ""
+    servicePortNumber: ""
 
 # Minimal, dependency-free fallback that forwards straight to Snowflake with
 # the correct Host header — a bypass path for when Yuki Proxy (or one of its
-# dependencies) is unhealthy. Off by default and not wired into `ingress` yet;
-# that wiring (weighted ALB target groups) is separate infra-repo work.
+# dependencies) is unhealthy. Off by default. Wire it into traffic via
+# ingress.backend above (weighted ALB target groups configured in terraform-infra).
 # See the "Yuki Proxy Bypass Options" design doc for the full rationale.
 passthrough:
   enabled: false
