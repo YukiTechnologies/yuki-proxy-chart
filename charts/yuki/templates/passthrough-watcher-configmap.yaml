@@ -20,7 +20,9 @@ data:
     CA_FILE=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     API=https://kubernetes.default.svc
     SVC_URL="$API/api/v1/namespaces/$NAMESPACE/services/{{ .Values.app.name }}"
-    HEALTH_URL="http://{{ .Values.app.name }}:{{ .Values.app.service.port }}{{ .Values.passthrough.watcher.healthPath }}"
+    # Deliberately NOT the {{ .Values.app.name }} Service above — that's the one we
+    # swap, so checking health through it would be circular once passthrough is active.
+    HEALTH_URL="http://{{ .Values.app.name }}-direct:{{ .Values.app.service.port }}{{ .Values.passthrough.watcher.healthPath }}"
     PROXY_LABEL="{{ .Values.app.name }}"
     PASSTHROUGH_LABEL="{{ .Values.app.name }}-passthrough"
     FAILURE_THRESHOLD={{ .Values.passthrough.watcher.failureThreshold }}
