@@ -33,8 +33,9 @@ data:
 
     # ponytail: grep/cut instead of a JSON parser — we control the exact response
     # shape (our own Service), so this is fine; swap for jq if that ever changes.
+    # The API server pretty-prints (space after ':'), so match that loosely.
     current_selector_label() {
-      k8s_curl "$SVC_URL" | grep -o '"app":"[^"]*"' | head -1 | cut -d'"' -f4
+      k8s_curl "$SVC_URL" | grep -o '"app": *"[^"]*"' | head -1 | cut -d'"' -f4
     }
 
     patch_selector() {
@@ -47,6 +48,10 @@ data:
     }
 
     current=$(current_selector_label)
+    if [ "$current" != "$PROXY_LABEL" ] && [ "$current" != "$PASSTHROUGH_LABEL" ]; then
+      echo "$(date -Iseconds) unexpected initial selector '$current'; assuming $PROXY_LABEL"
+      current="$PROXY_LABEL"
+    fi
     fail_count=0
     success_count=0
 

@@ -21,7 +21,7 @@ data:
       # every chart deploy anyway. ponytail: revisit with an explicit
       # `resolver` + variable proxy_pass if Snowflake IP churn ever bites.
       server {
-        listen {{ .Values.passthrough.port }};
+        listen {{ .Values.app.service.port }};
 
         location /healthz {
           return 200 "ok";

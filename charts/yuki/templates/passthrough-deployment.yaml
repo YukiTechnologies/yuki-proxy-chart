@@ -38,7 +38,7 @@ spec:
             capabilities:
               drop: ["ALL"]
           ports:
-            - containerPort: {{ .Values.passthrough.port }}
+            - containerPort: {{ .Values.app.service.port }}
           volumeMounts:
             - name: nginx-conf
               mountPath: /etc/nginx/nginx.conf
@@ -54,14 +54,14 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.passthrough.port }}
+              port: {{ .Values.app.service.port }}
             periodSeconds: 10
             timeoutSeconds: 1
             failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.passthrough.port }}
+              port: {{ .Values.app.service.port }}
             periodSeconds: 5
             timeoutSeconds: 1
             failureThreshold: 1

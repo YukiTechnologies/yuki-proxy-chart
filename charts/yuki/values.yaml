@@ -107,7 +107,9 @@ passthrough:
   enabled: false
   replicaCount: 2
   image: nginx:1.27-alpine
-  port: 8080
+  # Always listens on app.service.port (not its own port) — required for the watcher's
+  # Service-selector swap: the proxy Service's targetPort is fixed, so whatever it
+  # selects (proxy or passthrough pods) must listen on that same port.
   # auto: watcher controls the proxy Service selector based on health.
   # forcePassthrough / forceProxy: watcher pins the selector and skips health checks —
   # for a deliberate, GitOps-reviewable override. Read live from a mounted ConfigMap,
@@ -130,7 +132,6 @@ passthrough:
   snowflakeHost: ""
   service:
     type: ClusterIP
-    port: 8080
   resources:
     requests:
       memory: "32Mi"

@@ -12,6 +12,6 @@ spec:
     app: {{ .Values.app.name }}-passthrough
   ports:
     - name: app
-      port: {{ .Values.passthrough.service.port }}
-      targetPort: {{ .Values.passthrough.port }}
+      port: {{ .Values.app.service.port }}
+      targetPort: {{ .Values.app.service.port }}
 {{- end }}
