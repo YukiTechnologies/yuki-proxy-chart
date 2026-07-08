@@ -15,11 +15,7 @@ data:
     pid /tmp/nginx.pid;
     events { worker_connections 1024; }
     http {
-      # Snowflake's hostname is resolved once, at startup/reload, via the
-      # container's default resolver — no dynamic re-resolution. Fine for a
-      # bypass path that isn't the primary traffic route; pods recycle on
-      # every chart deploy anyway. ponytail: revisit with an explicit
-      # `resolver` + variable proxy_pass if Snowflake IP churn ever bites.
+      # ponytail: DNS resolved once at startup, not dynamically re-resolved.
       server {
         listen {{ .Values.app.service.port }};
 

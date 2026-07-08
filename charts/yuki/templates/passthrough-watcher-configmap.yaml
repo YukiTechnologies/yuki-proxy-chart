@@ -7,9 +7,7 @@ metadata:
     app: {{ .Values.app.name }}-passthrough
     group: {{ .Values.app.group }}
 data:
-  # Read fresh every loop iteration so a values change (mode: auto/forceProxy/
-  # forcePassthrough) propagates within one poll interval — no pod restart needed,
-  # since kubelet updates mounted ConfigMap files in place on change.
+  # Re-read each loop iteration, so a values change applies live.
   mode: {{ .Values.passthrough.mode | quote }}
   watch.sh: |
     #!/bin/sh
@@ -20,8 +18,7 @@ data:
     CA_FILE=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     API=https://kubernetes.default.svc
     SVC_URL="$API/api/v1/namespaces/$NAMESPACE/services/{{ .Values.app.name }}"
-    # Deliberately NOT the {{ .Values.app.name }} Service above — that's the one we
-    # swap, so checking health through it would be circular once passthrough is active.
+    # Not the Service above — that's the one we swap, checking through it would be circular.
     HEALTH_URL="http://{{ .Values.app.name }}-direct:{{ .Values.app.service.port }}{{ .Values.passthrough.watcher.healthPath }}"
     PROXY_LABEL="{{ .Values.app.name }}"
     PASSTHROUGH_LABEL="{{ .Values.app.name }}-passthrough"
@@ -33,9 +30,7 @@ data:
       curl -sS --cacert "$CA_FILE" -H "Authorization: Bearer $(cat $TOKEN_FILE)" "$@"
     }
 
-    # ponytail: grep/cut instead of a JSON parser — we control the exact response
-    # shape (our own Service), so this is fine; swap for jq if that ever changes.
-    # The API server pretty-prints (space after ':'), so match that loosely.
+    # ponytail: grep/cut, not jq — API server pretty-prints, so match loosely.
     current_selector_label() {
       k8s_curl "$SVC_URL" | grep -o '"app": *"[^"]*"' | head -1 | cut -d'"' -f4
     }

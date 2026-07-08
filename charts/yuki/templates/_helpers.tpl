@@ -35,12 +35,28 @@ INGESTION_KEY
 {{- end -}}
 {{- end -}}
 
-{{/* Snowflake account URL the passthrough forwards to, e.g. https://xyz.snowflakecomputing.com. */}}
+{{/* Snowflake URL the passthrough forwards to. */}}
 {{- define "proxy.passthrough.snowflakeUrl" -}}
 {{- .Values.passthrough.snowflakeHost | default .Values.app.container.env.PROXY_HOST -}}
 {{- end -}}
 
-{{/* Bare host[:port] for the Host header — Snowflake keys off this, not the scheme. */}}
+{{/* Host header for the passthrough. */}}
 {{- define "proxy.passthrough.snowflakeHostHeader" -}}
 {{- (include "proxy.passthrough.snowflakeUrl" . | urlParse).host -}}
+{{- end -}}
+
+{{/* Env token for secret paths: staging→stg, production→prod, development→dev. */}}
+{{- define "mcp.envShort" -}}
+{{- $env := required "app.container.env.ENVIRONMENT is required when mcp.enabled" .Values.app.container.env.ENVIRONMENT | lower -}}
+{{- if   eq $env "staging"     -}}stg
+{{- else if eq $env "production"  -}}prod
+{{- else if eq $env "development" -}}dev
+{{- else -}}{{ fail (printf "mcp.envShort: unknown ENVIRONMENT %q (expected staging|production|development)" $env) }}
+{{- end -}}
+{{- end -}}
+
+{{/* Secrets Manager path for MCP OAuth client creds. */}}
+{{- define "mcp.secretName" -}}
+{{- $acct := required "app.container.env.ACCOUNT_GUID is required when mcp.enabled" .Values.app.container.env.ACCOUNT_GUID -}}
+{{- printf "%s/yuki-mcp/%s" (include "mcp.envShort" .) $acct -}}
 {{- end -}}

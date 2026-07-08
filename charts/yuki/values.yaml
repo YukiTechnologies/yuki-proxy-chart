@@ -88,37 +88,21 @@ proxyDeploymentType: self_hosted
 
 ingress:
   enabled: false
-  # Overrides the Ingress rule's backend service/port. Empty by default (falls back to
-  # app.name / app.service.port, i.e. no behavior change). Set these to route through an
-  # ALB "actions." annotation (servicePortName: "use-annotation") for weighted bypass
-  # routing to the passthrough service below — that annotation itself is ALB-specific and
-  # lives in terraform-infra, not here, to keep this chart ingress-controller-agnostic.
+  # Overrides the Ingress backend, e.g. to route to an ALB "actions." target.
   backend:
     serviceName: ""
     servicePortName: ""
     servicePortNumber: ""
 
-# Minimal, dependency-free fallback that forwards straight to Snowflake with
-# the correct Host header — a bypass path for when Yuki Proxy (or one of its
-# dependencies) is unhealthy. Off by default. Wire it into traffic via
-# ingress.backend above (weighted ALB target groups configured in terraform-infra).
-# See the "Yuki Proxy Bypass Options" design doc for the full rationale.
+# Bypass path: forwards straight to Snowflake when the proxy is unhealthy.
 passthrough:
   enabled: false
   replicaCount: 2
   image: nginx:1.27-alpine
-  # Always listens on app.service.port (not its own port) — required for the watcher's
-  # Service-selector swap: the proxy Service's targetPort is fixed, so whatever it
-  # selects (proxy or passthrough pods) must listen on that same port.
-  # auto: watcher controls the proxy Service selector based on health.
-  # forcePassthrough / forceProxy: watcher pins the selector and skips health checks —
-  # for a deliberate, GitOps-reviewable override. Read live from a mounted ConfigMap,
-  # so changing this value takes effect within one poll interval, no pod restart needed.
+  # Must match app.service.port — the swapped Service's targetPort is fixed.
+  # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
-  # Watches app.container's own /health/live and flips the proxy Service's selector to
-  # the passthrough pods after enough consecutive failures (Kubernetes-native, so it
-  # works the same regardless of what's in front — ALB, nginx-ingress, anything —
-  # unlike ALB-specific weighted target groups, which only cover fully-hosted).
+  # Polls app's own /health/live; flips the proxy Service selector on failure.
   watcher:
     enabled: true
     image: curlimages/curl:8.11.0
@@ -126,9 +110,7 @@ passthrough:
     failureThreshold: 3
     successThreshold: 3
     healthPath: /health/live
-  # Snowflake account URL to forward to, e.g. "https://xyz.snowflakecomputing.com".
-  # Defaults to the same host Yuki Proxy itself targets (app.container.env.PROXY_HOST)
-  # so there's one source of truth; override only if they should ever differ.
+  # Defaults to app.container.env.PROXY_HOST.
   snowflakeHost: ""
   service:
     type: ClusterIP
@@ -253,3 +235,41 @@ groundcover:
       limits:
         cpu: 50m
         memory: 64Mi
+
+# MCP server — gated, default off; existing deployments are unchanged.
+mcp:
+  enabled: false
+  container:
+    image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
+  baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
+  platformUrl: "https://app.yukicomputing.com"  # prod default; override per-environment
+  allowedRedirectUris: ""  # comma-separated; blank = allow any (dev only)
+  corsAllowedOrigins: ""   # comma-separated; blank = wildcard (set explicitly in staging/prod)
+  snowflakeAccount: ""     # Snowflake account id, e.g. jsjvnsg-staging
+  integrationName: ""      # SystemManagement integration name for this account
+  logLevel: "INFO"
+  # Dedicated MCP subdomain ingress (own ALB + cert). When disabled (default),
+  # MCP is path-routed (/mcp, /oauth, /register, /.well-known) on the proxy
+  # ingress and baseUrl points at the proxy host. When enabled, MCP owns the
+  # whole `host` subdomain — set baseUrl to https://<host> to match.
+  # Full MCP host, set per-tenant; required when ingress.enabled. Convention is
+  # mcp-<namespace>.<domain> (single label — the *.<domain> wildcard cert covers
+  # it), e.g. mcp-jsjvnsg-prod-aws-n-virginia.yukicomputing.com. A dotted
+  # mcp.<namespace>.<domain> is 2 labels deep and needs its own dedicated cert.
+  host: ""
+  ingress:
+    enabled: false
+    className: alb         # falls back to .Values.ingress.className if empty
+    annotations: {}        # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+  hpa:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      memory: "512Mi"

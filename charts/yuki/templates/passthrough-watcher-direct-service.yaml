@@ -1,7 +1,5 @@
 {{- if and .Values.passthrough.enabled .Values.passthrough.watcher.enabled -}}
-# Stable, never-swapped Service pointing at the real proxy pods, used only so the
-# watcher can health-check the proxy directly — checking through the main
-# {{ .Values.app.name }} Service would be circular once it's swapped to passthrough.
+# Stable Service for health-checking the real proxy pods (never swapped).
 apiVersion: v1
 kind: Service
 metadata:

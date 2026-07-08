@@ -1,0 +1,29 @@
+{{- if and .Values.mcp.enabled .Values.mcp.ingress.enabled -}}
+{{- $host := required "mcp.host is required when mcp.ingress.enabled" .Values.mcp.host -}}
+# Dedicated MCP subdomain ingress (own ALB + cert), e.g. mcp.<namespace>.<domain>.
+# When this is enabled the /mcp,/oauth,/register,/.well-known path routes are dropped
+# from the proxy ingress (see ingress.yaml) — the MCP server owns the whole subdomain.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.mcp.ingress.name | default "yuki-mcp-ingress" }}
+  {{- with .Values.mcp.ingress.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ tpl (toString $value) $ | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.mcp.ingress.className | default .Values.ingress.className }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp
+                port:
+                  number: 8000
+{{- end }}

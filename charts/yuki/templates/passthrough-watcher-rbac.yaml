@@ -7,8 +7,7 @@ metadata:
     app: {{ .Values.app.name }}-passthrough
     group: {{ .Values.app.group }}
 ---
-# Scoped to exactly what the watcher does: read and patch the proxy's own Service.
-# Nothing else in the cluster is reachable with this identity.
+# get/patch on just this one Service — nothing else.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
