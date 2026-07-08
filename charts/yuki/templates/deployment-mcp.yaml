@@ -29,6 +29,26 @@ spec:
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
       terminationGracePeriodSeconds: 30
+      affinity:
+        {{- with .Values.affinity.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        # Co-locate with the proxy so the Groundcover sensor (required onto app: yuki-proxy) covers yuki-mcp too.
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: {{ .Values.app.name }}
+              topologyKey: kubernetes.io/hostname
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
