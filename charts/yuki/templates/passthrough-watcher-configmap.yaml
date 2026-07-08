@@ -30,9 +30,10 @@ data:
       curl -sS --cacert "$CA_FILE" -H "Authorization: Bearer $(cat $TOKEN_FILE)" "$@"
     }
 
-    # ponytail: grep/cut, not jq — API server pretty-prints, so match loosely.
+    # ponytail: sed, not jq — scoped to spec.selector so metadata.labels.app doesn't match first.
     current_selector_label() {
-      k8s_curl "$SVC_URL" | grep -o '"app": *"[^"]*"' | head -1 | cut -d'"' -f4
+      k8s_curl "$SVC_URL" | tr -d '\n' \
+        | sed -n 's/.*"selector"[[:space:]]*:[[:space:]]*{[^}]*"app"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
     }
 
     patch_selector() {
@@ -46,7 +47,8 @@ data:
 
     current=$(current_selector_label)
     if [ "$current" != "$PROXY_LABEL" ] && [ "$current" != "$PASSTHROUGH_LABEL" ]; then
-      echo "$(date -Iseconds) bypass-watcher: unexpected initial selector '$current'; assuming $PROXY_LABEL"
+      echo "$(date -Iseconds) bypass-watcher: unexpected initial selector '$current'; resetting to $PROXY_LABEL"
+      patch_selector "$PROXY_LABEL"
       current="$PROXY_LABEL"
     fi
     fail_count=0
