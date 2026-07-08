@@ -6,6 +6,9 @@
 {{- if not (or (hasPrefix "http://" $snowflakeUrl) (hasPrefix "https://" $snowflakeUrl)) -}}
 {{- fail (printf "passthrough Snowflake URL %q must include a scheme (https://...) or the Host header renders empty" $snowflakeUrl) -}}
 {{- end -}}
+{{- if hasSuffix "/" $snowflakeUrl -}}
+{{- fail (printf "passthrough Snowflake URL %q must not have a trailing slash — this changes proxy_pass URI rewriting" $snowflakeUrl) -}}
+{{- end -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
