@@ -51,31 +51,43 @@ data:
 
     current=$(current_selector_label)
     if [ "$current" != "$PROXY_LABEL" ] && [ "$current" != "$PASSTHROUGH_LABEL" ]; then
-      echo "$(date -Iseconds) unexpected initial selector '$current'; assuming $PROXY_LABEL"
+      echo "$(date -Iseconds) bypass-watcher: unexpected initial selector '$current'; assuming $PROXY_LABEL"
       current="$PROXY_LABEL"
     fi
     fail_count=0
     success_count=0
+    echo "$(date -Iseconds) bypass-watcher: started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) current=$current health_url=$HEALTH_URL"
 
     while true; do
       mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto)
 
       if [ "$mode" = "forcePassthrough" ]; then
-        [ "$current" = "$PASSTHROUGH_LABEL" ] || { patch_selector "$PASSTHROUGH_LABEL"; current=$PASSTHROUGH_LABEL; }
+        if [ "$current" != "$PASSTHROUGH_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: mode=forcePassthrough, switching $current -> $PASSTHROUGH_LABEL"
+          patch_selector "$PASSTHROUGH_LABEL"; current=$PASSTHROUGH_LABEL
+        fi
         fail_count=0; success_count=0
       elif [ "$mode" = "forceProxy" ]; then
-        [ "$current" = "$PROXY_LABEL" ] || { patch_selector "$PROXY_LABEL"; current=$PROXY_LABEL; }
+        if [ "$current" != "$PROXY_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: mode=forceProxy, switching $current -> $PROXY_LABEL"
+          patch_selector "$PROXY_LABEL"; current=$PROXY_LABEL
+        fi
         fail_count=0; success_count=0
       else
         if curl -sf -o /dev/null -m 3 "$HEALTH_URL"; then
           success_count=$((success_count + 1)); fail_count=0
+          health=healthy
         else
           fail_count=$((fail_count + 1)); success_count=0
+          health=unhealthy
         fi
+        echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
 
         if [ "$current" = "$PROXY_LABEL" ] && [ "$fail_count" -ge "$FAILURE_THRESHOLD" ]; then
+          echo "$(date -Iseconds) bypass-watcher: failure threshold reached, switching $PROXY_LABEL -> $PASSTHROUGH_LABEL"
           patch_selector "$PASSTHROUGH_LABEL"; current=$PASSTHROUGH_LABEL; fail_count=0
         elif [ "$current" = "$PASSTHROUGH_LABEL" ] && [ "$success_count" -ge "$SUCCESS_THRESHOLD" ]; then
+          echo "$(date -Iseconds) bypass-watcher: success threshold reached, reverting $PASSTHROUGH_LABEL -> $PROXY_LABEL"
           patch_selector "$PROXY_LABEL"; current=$PROXY_LABEL; success_count=0
         fi
       fi
