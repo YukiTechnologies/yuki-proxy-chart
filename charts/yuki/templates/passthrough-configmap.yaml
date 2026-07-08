@@ -1,6 +1,10 @@
 {{- if .Values.passthrough.enabled -}}
-{{- if not (include "proxy.passthrough.snowflakeUrl" .) -}}
+{{- $snowflakeUrl := include "proxy.passthrough.snowflakeUrl" . -}}
+{{- if not $snowflakeUrl -}}
 {{- fail "passthrough.enabled is true but no Snowflake host is set — set passthrough.snowflakeHost or app.container.env.PROXY_HOST." -}}
+{{- end -}}
+{{- if not (or (hasPrefix "http://" $snowflakeUrl) (hasPrefix "https://" $snowflakeUrl)) -}}
+{{- fail (printf "passthrough Snowflake URL %q must include a scheme (https://...) or the Host header renders empty" $snowflakeUrl) -}}
 {{- end -}}
 apiVersion: v1
 kind: ConfigMap
