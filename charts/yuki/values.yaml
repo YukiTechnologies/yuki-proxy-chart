@@ -3,7 +3,7 @@ app:
   group: default-app-group
   replicaCount: 4
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.407
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.408
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
@@ -196,3 +196,41 @@ groundcover:
       limits:
         cpu: 50m
         memory: 256Mi
+
+# MCP server — gated, default off; existing deployments are unchanged.
+mcp:
+  enabled: false
+  container:
+    image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
+  baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
+  platformUrl: "https://app.yukicomputing.com"  # prod default; override per-environment
+  allowedRedirectUris: ""  # comma-separated; blank = allow any (dev only)
+  corsAllowedOrigins: ""   # comma-separated; blank = wildcard (set explicitly in staging/prod)
+  snowflakeAccount: ""     # Snowflake account id, e.g. jsjvnsg-staging
+  integrationName: ""      # SystemManagement integration name for this account
+  logLevel: "INFO"
+  # Dedicated MCP subdomain ingress (own ALB + cert). When disabled (default),
+  # MCP is path-routed (/mcp, /oauth, /register, /.well-known) on the proxy
+  # ingress and baseUrl points at the proxy host. When enabled, MCP owns the
+  # whole `host` subdomain — set baseUrl to https://<host> to match.
+  # Full MCP host, set per-tenant; required when ingress.enabled. Convention is
+  # mcp-<namespace>.<domain> (single label — the *.<domain> wildcard cert covers
+  # it), e.g. mcp-jsjvnsg-prod-aws-n-virginia.yukicomputing.com. A dotted
+  # mcp.<namespace>.<domain> is 2 labels deep and needs its own dedicated cert.
+  host: ""
+  ingress:
+    enabled: false
+    className: alb         # falls back to .Values.ingress.className if empty
+    annotations: {}        # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+  hpa:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      memory: "512Mi"

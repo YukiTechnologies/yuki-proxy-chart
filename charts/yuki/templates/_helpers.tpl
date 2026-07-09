@@ -34,3 +34,19 @@
 INGESTION_KEY
 {{- end -}}
 {{- end -}}
+
+{{/* Short env token for secret paths: staging→stg, production→prod, development→dev. */}}
+{{- define "mcp.envShort" -}}
+{{- $env := required "app.container.env.ENVIRONMENT is required when mcp.enabled" .Values.app.container.env.ENVIRONMENT | lower -}}
+{{- if   eq $env "staging"     -}}stg
+{{- else if eq $env "production"  -}}prod
+{{- else if eq $env "development" -}}dev
+{{- else -}}{{ fail (printf "mcp.envShort: unknown ENVIRONMENT %q (expected staging|production|development)" $env) }}
+{{- end -}}
+{{- end -}}
+
+{{/* AWS Secrets Manager path for the MCP OAuth client creds: {envShort}/yuki-mcp/{account-id}. */}}
+{{- define "mcp.secretName" -}}
+{{- $acct := required "app.container.env.ACCOUNT_GUID is required when mcp.enabled" .Values.app.container.env.ACCOUNT_GUID -}}
+{{- printf "%s/yuki-mcp/%s" (include "mcp.envShort" .) $acct -}}
+{{- end -}}
