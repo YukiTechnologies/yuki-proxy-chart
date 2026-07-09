@@ -20,12 +20,6 @@ spec:
         group: {{ .Values.app.group }}
     spec:
       terminationGracePeriodSeconds: 15
-      {{- if and .Values.passthrough.watcher.enabled (not .Values.passthrough.mode) }}
-      {{- fail "passthrough.mode must be set (auto/forcePassthrough/forceProxy) when passthrough.watcher.enabled is true" }}
-      {{- end }}
-      {{- if .Values.passthrough.watcher.enabled }}
-      serviceAccountName: {{ .Values.app.name }}-passthrough-watcher
-      {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
@@ -71,26 +65,6 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "sleep 5"]
-        {{- if .Values.passthrough.watcher.enabled }}
-        - name: watcher
-          image: {{ .Values.passthrough.watcher.image }}
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "/etc/bypass/watch.sh"]
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: ["ALL"]
-          volumeMounts:
-            - name: watcher-config
-              mountPath: /etc/bypass
-          resources:
-            requests:
-              cpu: "10m"
-              memory: "16Mi"
-            limits:
-              memory: "32Mi"
-        {{- end }}
       volumes:
         - name: nginx-conf
           configMap:
@@ -101,9 +75,4 @@ spec:
         - name: tmp
           emptyDir:
             sizeLimit: 16Mi
-        {{- if .Values.passthrough.watcher.enabled }}
-        - name: watcher-config
-          configMap:
-            name: {{ .Values.app.name }}-passthrough-watcher
-        {{- end }}
 {{- end }}

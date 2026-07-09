@@ -1,0 +1,63 @@
+{{- if and .Values.passthrough.enabled .Values.passthrough.watcher.enabled -}}
+{{- if not .Values.passthrough.mode }}
+{{- fail "passthrough.mode must be set (auto/forcePassthrough/forceProxy) when passthrough.watcher.enabled is true" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-passthrough-watcher
+  labels:
+    app: {{ .Values.app.name }}-passthrough-watcher
+    group: {{ .Values.app.group }}
+spec:
+  # Single instance by design — one controller deciding the Service selector, not one per passthrough pod.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-passthrough-watcher
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-passthrough-watcher
+        group: {{ .Values.app.group }}
+    spec:
+      serviceAccountName: {{ .Values.app.name }}-passthrough-watcher
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: watcher
+          image: {{ .Values.passthrough.watcher.image }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "/etc/bypass/watch.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: watcher-config
+              mountPath: /etc/bypass
+            - name: tmp
+              mountPath: /tmp
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -n \"$(find /tmp/heartbeat -mmin -1 2>/dev/null)\""]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              memory: "32Mi"
+      volumes:
+        - name: watcher-config
+          configMap:
+            name: {{ .Values.app.name }}-passthrough-watcher
+        - name: tmp
+          emptyDir:
+            sizeLimit: 4Mi
+{{- end }}

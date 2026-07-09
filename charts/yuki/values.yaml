@@ -121,12 +121,13 @@ passthrough:
   snowflakeHost: ""
   service:
     type: ClusterIP
+  # Sized to match the main proxy — a real failover can send it full production traffic.
   resources:
     requests:
-      memory: "32Mi"
-      cpu: "25m"
+      memory: "300Mi"
+      cpu: "250m"
     limits:
-      memory: "64Mi"
+      memory: "600Mi"
 
 resources:
   requests:

@@ -18,11 +18,13 @@ metadata:
     group: {{ .Values.app.group }}
 data:
   nginx.conf: |
-    worker_processes 1;
+    worker_processes auto;
     pid /tmp/nginx.pid;
     events { worker_connections 1024; }
     http {
-      # ponytail: DNS resolved once at startup, not dynamically re-resolved.
+      client_max_body_size 0;
+      # local=on reads /etc/resolv.conf so this works on any cluster's DNS, not just one CIDR.
+      resolver local=on valid=30s ipv6=off;
       server {
         listen {{ .Values.app.service.port }};
 
@@ -32,8 +34,17 @@ data:
           add_header Content-Type text/plain;
         }
 
+        # ALB target-group health check — must answer directly, not fall through to Snowflake.
+        location = /health/live {
+          access_log off;
+          return 200 "ok";
+          add_header Content-Type text/plain;
+        }
+
         location / {
-          proxy_pass {{ include "proxy.passthrough.snowflakeUrl" . }};
+          # $upstream forces periodic re-resolution; a literal proxy_pass target is resolved once at startup.
+          set $upstream {{ include "proxy.passthrough.snowflakeUrl" . }};
+          proxy_pass $upstream;
           proxy_ssl_server_name on;
           proxy_ssl_verify on;
           proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
