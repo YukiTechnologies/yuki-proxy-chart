@@ -27,6 +27,7 @@ data:
         listen {{ .Values.app.service.port }};
 
         location /healthz {
+          access_log off;
           return 200 "ok";
           add_header Content-Type text/plain;
         }

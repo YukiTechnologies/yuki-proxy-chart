@@ -7,7 +7,9 @@ metadata:
     app: {{ .Values.app.name }}-passthrough
     group: {{ .Values.app.group }}
 spec:
+  {{- if not .Values.passthrough.hpa.enabled }}
   replicas: {{ .Values.passthrough.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Values.app.name }}-passthrough

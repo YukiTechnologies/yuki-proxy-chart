@@ -98,6 +98,13 @@ ingress:
 passthrough:
   enabled: false
   replicaCount: 2
+  # Real production traffic can land here during a failover — scale it accordingly.
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
   image: nginx:1.27-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
