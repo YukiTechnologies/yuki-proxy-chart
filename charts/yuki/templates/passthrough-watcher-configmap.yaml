@@ -80,9 +80,13 @@ data:
         continue
       fi
       if [ "$current" != "$PROXY_LABEL" ] && [ "$current" != "$PASSTHROUGH_LABEL" ]; then
-        echo "$(date -Iseconds) bypass-watcher: unexpected selector '$current'; resetting to $PROXY_LABEL"
-        patch_selector "$PROXY_LABEL" || true
-        current="$PROXY_LABEL"
+        # Reset toward whatever the active mode wants, not always the proxy — resetting
+        # to the proxy first while forcePassthrough is active would defeat the override.
+        reset_target="$PROXY_LABEL"
+        [ "$mode" = "forcePassthrough" ] && reset_target="$PASSTHROUGH_LABEL"
+        echo "$(date -Iseconds) bypass-watcher: unexpected selector '$current'; resetting to $reset_target"
+        patch_selector "$reset_target" || true
+        current="$reset_target"
       fi
 
       if [ "$mode" = "forcePassthrough" ]; then

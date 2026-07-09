@@ -17,14 +17,15 @@ metadata:
     app: {{ .Values.app.name }}-passthrough
     group: {{ .Values.app.group }}
 data:
-  nginx.conf: |
+  # __RESOLVER_IP__ is substituted at container start from /etc/resolv.conf — stock nginx has
+  # no "read resolv.conf yourself" option (that's an OpenResty-only extension).
+  nginx.conf.template: |
     worker_processes auto;
     pid /tmp/nginx.pid;
     events { worker_connections 1024; }
     http {
       client_max_body_size 0;
-      # local=on reads /etc/resolv.conf so this works on any cluster's DNS, not just one CIDR.
-      resolver local=on valid=30s ipv6=off;
+      resolver __RESOLVER_IP__ valid=30s ipv6=off;
       server {
         listen {{ .Values.app.service.port }};
 

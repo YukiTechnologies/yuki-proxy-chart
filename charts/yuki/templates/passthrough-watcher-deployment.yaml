@@ -42,8 +42,10 @@ spec:
             - name: tmp
               mountPath: /tmp
           livenessProbe:
+            # ponytail: 3m window — worst case a loop iteration burns ~65s on curl retries
+            # (2x reads x up to 2x(10s timeout+1 retry) + sleeps), so 1m was too tight.
             exec:
-              command: ["sh", "-c", "test -n \"$(find /tmp/heartbeat -mmin -1 2>/dev/null)\""]
+              command: ["sh", "-c", "test -n \"$(find /tmp/heartbeat -mmin -3 2>/dev/null)\""]
             initialDelaySeconds: 10
             periodSeconds: 15
             failureThreshold: 2

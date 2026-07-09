@@ -33,12 +33,19 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              resolver_ip=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
+              sed "s/__RESOLVER_IP__/$resolver_ip/" /etc/nginx/nginx.conf.template > /tmp/nginx.conf
+              exec nginx -c /tmp/nginx.conf -g "daemon off;"
           ports:
             - containerPort: {{ .Values.app.service.port }}
           volumeMounts:
             - name: nginx-conf
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
+              mountPath: /etc/nginx/nginx.conf.template
+              subPath: nginx.conf.template
             - name: cache
               mountPath: /var/cache/nginx
             - name: tmp
