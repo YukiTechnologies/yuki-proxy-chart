@@ -124,10 +124,9 @@ external-secrets:
   serviceAccount:
     create: true
 
-# Groundcover ingestion key — set once here (or via --set / private file;
-# never commit). Shared with the subchart (sensor auth) and read by the parent
-# (OTLP collector Secret). Name must stay `groundcover_token` — the subchart
-# reads that key.
+# Groundcover ingestion key — set once (via --set or a private file; never commit).
+# Shared by the sensor subchart and the OTLP collector. As a subchart, set it at the
+# umbrella top level (global.*), not under the proxy alias.
 global:
   groundcover_token: ""
 
@@ -180,29 +179,23 @@ groundcover:
     # groundcoverPredefinedTokenSecret:
     #   secretName: groundcover-ingestion-key
     #   secretKey: INGESTION_KEY
-  # Sensor auto-co-locates with the proxy: each pod schedules only onto a node
-  # running a yuki-proxy pod (Pending elsewhere). No node labels needed.
-  # Update the selector if you override app.name; set agent.affinity: {} for all nodes.
+  # Sensor runs on all non-Fargate nodes by default. To pin it to the proxy's nodes,
+  # label them and set the same nodeSelector here and on the proxy top-level
+  # `nodeSelector`. Avoid `affinity: null` (Helm 4 strips the Fargate guard).
   agent:
-    affinity:
-      podAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app: yuki-proxy
-            topologyKey: kubernetes.io/hostname
+    nodeSelector: {}
   vector:
     enabled: false        # not needed in BYOC; sensor ships directly
   # k8s-watcher: REQUIRED for Groundcover to attribute traffic to workloads
-  # (no enable toggle in the subchart); resources trimmed to fit small nodes.
+  # (no enable toggle in the subchart). 256Mi — 64Mi gets OOM-killed under load.
   k8sWatcher:
     resources:
       requests:
         cpu: 10m
-        memory: 32Mi
+        memory: 128Mi
       limits:
         cpu: 50m
-        memory: 64Mi
+        memory: 256Mi
 
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
