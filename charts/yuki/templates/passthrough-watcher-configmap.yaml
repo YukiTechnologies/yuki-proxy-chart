@@ -78,7 +78,11 @@ data:
           fail_count=$((fail_count + 1)); success_count=0
           health=unhealthy
         fi
-        echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
+        # Quiet in the steady state (healthy, on proxy, nothing happening) — every
+        # poll logs otherwise: any failure, or anything while on the passthrough.
+        if [ "$health" = "unhealthy" ] || [ "$current" != "$PROXY_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
+        fi
 
         if [ "$current" = "$PROXY_LABEL" ] && [ "$fail_count" -ge "$FAILURE_THRESHOLD" ]; then
           echo "$(date -Iseconds) bypass-watcher: failure threshold reached, switching $PROXY_LABEL -> $PASSTHROUGH_LABEL"
