@@ -3,8 +3,8 @@
 {{- if not $upstreamUrl -}}
 {{- fail "passthrough.enabled is true but no upstream host is set — set passthrough.bigqueryHost/app.container.env.BIGQUERY_HOST or passthrough.snowflakeHost/app.container.env.PROXY_HOST." -}}
 {{- end -}}
-{{- if not (or (hasPrefix "http://" $upstreamUrl) (hasPrefix "https://" $upstreamUrl)) -}}
-{{- fail (printf "passthrough upstream URL %q must include a scheme (https://...) or the Host header renders empty" $upstreamUrl) -}}
+{{- if not (hasPrefix "https://" $upstreamUrl) -}}
+{{- fail (printf "passthrough upstream URL %q must be https:// — this proxies live Snowflake/BigQuery credentials and must not fall back to plaintext" $upstreamUrl) -}}
 {{- end -}}
 {{- $upstreamParts := urlParse $upstreamUrl -}}
 {{- if or (not $upstreamParts.host) $upstreamParts.path $upstreamParts.query $upstreamParts.fragment -}}
