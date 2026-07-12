@@ -40,11 +40,6 @@ INGESTION_KEY
 {{- or .Values.passthrough.snowflakeHost .Values.app.container.env.PROXY_HOST "" -}}
 {{- end -}}
 
-{{/* Snowflake's real host — the client's request instead targets Yuki's hosted domain, so this is what gets rewritten in. */}}
-{{- define "proxy.passthrough.snowflakeHostHeader" -}}
-{{- (include "proxy.passthrough.snowflakeUrl" . | urlParse).host -}}
-{{- end -}}
-
 {{/* BigQuery URL the passthrough forwards to — same fixed Google endpoint for every account. */}}
 {{- define "proxy.passthrough.bigqueryUrl" -}}
 {{- or .Values.passthrough.bigqueryHost .Values.app.container.env.BIGQUERY_HOST "" -}}
@@ -55,8 +50,9 @@ INGESTION_KEY
 {{- include "proxy.passthrough.bigqueryUrl" . | default (include "proxy.passthrough.snowflakeUrl" .) -}}
 {{- end -}}
 
-{{- define "proxy.passthrough.isBigQuery" -}}
-{{- if include "proxy.passthrough.bigqueryUrl" . -}}true{{- end -}}
+{{/* Real upstream host — the client's request instead targets Yuki's hosted domain, so this is what gets rewritten in. */}}
+{{- define "proxy.passthrough.upstreamHostHeader" -}}
+{{- (include "proxy.passthrough.upstreamUrl" . | urlParse).host -}}
 {{- end -}}
 
 {{/* Env token for secret paths: staging→stg, production→prod, development→dev. */}}

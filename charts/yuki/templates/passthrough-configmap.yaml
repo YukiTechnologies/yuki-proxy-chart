@@ -1,6 +1,5 @@
 {{- if .Values.passthrough.enabled -}}
 {{- $upstreamUrl := include "proxy.passthrough.upstreamUrl" . -}}
-{{- $isBigQuery := include "proxy.passthrough.isBigQuery" . -}}
 {{- if not $upstreamUrl -}}
 {{- fail "passthrough.enabled is true but no upstream host is set — set passthrough.bigqueryHost/app.container.env.BIGQUERY_HOST or passthrough.snowflakeHost/app.container.env.PROXY_HOST." -}}
 {{- end -}}
@@ -51,13 +50,8 @@ data:
           proxy_ssl_server_name on;
           proxy_ssl_verify on;
           proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
-          {{- if $isBigQuery }}
-          # Client already targets the real BigQuery host — forward it unchanged.
-          proxy_set_header Host $http_host;
-          {{- else }}
-          # Client targets Yuki's hosted domain, not Snowflake's — rewrite to the real host.
-          proxy_set_header Host {{ include "proxy.passthrough.snowflakeHostHeader" . }};
-          {{- end }}
+          # Client targets Yuki's hosted domain, not the real upstream — rewrite to the real host.
+          proxy_set_header Host {{ include "proxy.passthrough.upstreamHostHeader" . }};
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_http_version 1.1;
