@@ -1,0 +1,17 @@
+{{- if and .Values.passthrough.enabled .Values.passthrough.watcher.enabled -}}
+# Stable Service for health-checking the real proxy pods (never swapped).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}-direct
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+spec:
+  selector:
+    app: {{ .Values.app.name }}
+  ports:
+    - name: app
+      port: {{ .Values.app.service.port }}
+      targetPort: {{ .Values.app.container.port }}
+{{- end }}

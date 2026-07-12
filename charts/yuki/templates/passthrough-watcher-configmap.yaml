@@ -1,0 +1,133 @@
+{{- if and .Values.passthrough.enabled .Values.passthrough.watcher.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-passthrough-watcher
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+data:
+  # Re-read each loop iteration, so a values change applies live.
+  mode: {{ .Values.passthrough.mode | quote }}
+  watch.sh: |
+    #!/bin/sh
+    set -eu -o pipefail
+
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    TOKEN_FILE=/var/run/secrets/kubernetes.io/serviceaccount/token
+    CA_FILE=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    API=https://kubernetes.default.svc
+    SVC_URL="$API/api/v1/namespaces/$NAMESPACE/services/{{ .Values.app.name }}"
+    # Not the Service above — that's the one we swap, checking through it would be circular.
+    HEALTH_URL="http://{{ .Values.app.name }}-direct:{{ .Values.app.service.port }}{{ .Values.passthrough.watcher.healthPath }}"
+    PROXY_LABEL="{{ .Values.app.name }}"
+    PASSTHROUGH_LABEL="{{ .Values.app.name }}-passthrough"
+    FAILURE_THRESHOLD={{ .Values.passthrough.watcher.failureThreshold }}
+    SUCCESS_THRESHOLD={{ .Values.passthrough.watcher.successThreshold }}
+    POLL_INTERVAL={{ .Values.passthrough.watcher.pollIntervalSeconds }}
+    HEARTBEAT_FILE=/tmp/heartbeat
+
+    k8s_curl() {
+      curl -sS --max-time 10 --retry 1 --cacert "$CA_FILE" -H "Authorization: Bearer $(cat $TOKEN_FILE)" "$@"
+    }
+
+    # ponytail: sed, not jq — scoped to spec.selector so metadata.labels.app doesn't match first.
+    current_selector_label() {
+      k8s_curl -f "$SVC_URL" | tr -d '\n' \
+        | sed -n 's/.*"selector"[[:space:]]*:[[:space:]]*{[^}]*"app"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+    }
+
+    # Retries transient failures; only returns non-zero once retries are exhausted, so
+    # the caller can tell "couldn't read" apart from "read something unexpected".
+    read_selector() {
+      attempt=0
+      while [ "$attempt" -lt 3 ]; do
+        if label=$(current_selector_label); then
+          printf '%s' "$label"
+          return 0
+        fi
+        attempt=$((attempt + 1))
+        sleep 1
+      done
+      return 1
+    }
+
+    patch_selector() {
+      label="$1"
+      if ! k8s_curl -f -X PATCH \
+        -H "Content-Type: application/strategic-merge-patch+json" \
+        -d "{\"spec\":{\"selector\":{\"app\":\"$label\"}}}" \
+        "$SVC_URL" >/dev/null; then
+        echo "$(date -Iseconds) bypass-watcher: PATCH to app=$label failed" >&2
+        return 1
+      fi
+      echo "$(date -Iseconds) switched proxy Service to app=$label"
+    }
+
+    fail_count=0
+    success_count=0
+    echo "$(date -Iseconds) bypass-watcher: started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) health_url=$HEALTH_URL"
+
+    while true; do
+      mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto)
+
+      # Re-read the real Service each loop instead of trusting an in-memory value —
+      # a stale/wrong belief here is worse than one extra API call per poll.
+      if ! current=$(read_selector); then
+        echo "$(date -Iseconds) bypass-watcher: could not read Service selector after retries, skipping this cycle"
+        touch "$HEARTBEAT_FILE"
+        sleep "$POLL_INTERVAL"
+        continue
+      fi
+      if [ "$current" != "$PROXY_LABEL" ] && [ "$current" != "$PASSTHROUGH_LABEL" ]; then
+        # Reset toward whatever the active mode wants, not always the proxy — resetting
+        # to the proxy first while forcePassthrough is active would defeat the override.
+        reset_target="$PROXY_LABEL"
+        [ "$mode" = "forcePassthrough" ] && reset_target="$PASSTHROUGH_LABEL"
+        echo "$(date -Iseconds) bypass-watcher: unexpected selector '$current'; resetting to $reset_target"
+        patch_selector "$reset_target" || true
+        current="$reset_target"
+      fi
+
+      if [ "$mode" = "forcePassthrough" ]; then
+        if [ "$current" != "$PASSTHROUGH_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: mode=forcePassthrough, switching $current -> $PASSTHROUGH_LABEL"
+          patch_selector "$PASSTHROUGH_LABEL" || true
+        fi
+        fail_count=0; success_count=0
+      elif [ "$mode" = "forceProxy" ]; then
+        if [ "$current" != "$PROXY_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: mode=forceProxy, switching $current -> $PROXY_LABEL"
+          patch_selector "$PROXY_LABEL" || true
+        fi
+        fail_count=0; success_count=0
+      else
+        if curl -sf -o /dev/null -m 3 "$HEALTH_URL"; then
+          success_count=$((success_count + 1)); fail_count=0
+          health=healthy
+        else
+          fail_count=$((fail_count + 1)); success_count=0
+          health=unhealthy
+        fi
+        # Quiet in the steady state (healthy, on proxy, nothing happening) — every
+        # poll logs otherwise: any failure, or anything while on the passthrough.
+        if [ "$health" = "unhealthy" ] || [ "$current" != "$PROXY_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
+        fi
+
+        if [ "$current" = "$PROXY_LABEL" ] && [ "$fail_count" -ge "$FAILURE_THRESHOLD" ]; then
+          echo "$(date -Iseconds) bypass-watcher: failure threshold reached, switching $PROXY_LABEL -> $PASSTHROUGH_LABEL"
+          patch_selector "$PASSTHROUGH_LABEL" || true
+          fail_count=0
+        elif [ "$current" = "$PASSTHROUGH_LABEL" ] && [ "$success_count" -ge "$SUCCESS_THRESHOLD" ]; then
+          echo "$(date -Iseconds) bypass-watcher: success threshold reached, reverting $PASSTHROUGH_LABEL -> $PROXY_LABEL"
+          patch_selector "$PROXY_LABEL" || true
+          success_count=0
+        fi
+      fi
+
+      # Liveness probe checks this file's mtime — a hang anywhere above stops it updating.
+      touch "$HEARTBEAT_FILE"
+      sleep "$POLL_INTERVAL"
+    done
+{{- end }}

@@ -1,0 +1,28 @@
+{{- if and .Values.passthrough.enabled .Values.passthrough.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.app.name }}-passthrough
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.app.name }}-passthrough
+  minReplicas: {{ .Values.passthrough.hpa.minReplicas }}
+  maxReplicas: {{ .Values.passthrough.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.passthrough.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.passthrough.hpa.targetMemoryUtilizationPercentage }}
+{{- end }}

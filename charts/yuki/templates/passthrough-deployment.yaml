@@ -1,0 +1,85 @@
+{{- if .Values.passthrough.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-passthrough
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+spec:
+  {{- if not .Values.passthrough.hpa.enabled }}
+  replicas: {{ .Values.passthrough.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-passthrough
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-passthrough
+        group: {{ .Values.app.group }}
+    spec:
+      terminationGracePeriodSeconds: 15
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: passthrough
+          image: {{ .Values.passthrough.image }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              resolver_ip=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
+              sed "s/__RESOLVER_IP__/$resolver_ip/" /etc/nginx/nginx.conf.template > /tmp/nginx.conf
+              exec nginx -c /tmp/nginx.conf -g "daemon off;"
+          ports:
+            - containerPort: {{ .Values.app.service.port }}
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf.template
+              subPath: nginx.conf.template
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: tmp
+              mountPath: /tmp
+          {{- with .Values.passthrough.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.app.service.port }}
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.app.service.port }}
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 1
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ .Values.app.name }}-passthrough
+        - name: cache
+          emptyDir:
+            sizeLimit: 64Mi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+{{- end }}

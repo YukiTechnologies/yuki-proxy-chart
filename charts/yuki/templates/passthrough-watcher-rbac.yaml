@@ -1,0 +1,38 @@
+{{- if and .Values.passthrough.enabled .Values.passthrough.watcher.enabled -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.app.name }}-passthrough-watcher
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+---
+# get/patch on just this one Service — nothing else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.app.name }}-passthrough-watcher
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+rules:
+  - apiGroups: [""]
+    resources: ["services"]
+    resourceNames: ["{{ .Values.app.name }}"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.app.name }}-passthrough-watcher
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.app.name }}-passthrough-watcher
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.app.name }}-passthrough-watcher
+{{- end }}

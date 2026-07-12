@@ -88,6 +88,48 @@ proxyDeploymentType: self_hosted
 
 ingress:
   enabled: false
+  # Overrides the Ingress backend, e.g. to route to an ALB "actions." target.
+  backend:
+    serviceName: ""
+    servicePortName: ""
+    servicePortNumber: ""
+
+# Bypass path: forwards straight to Snowflake/BigQuery when the proxy is unhealthy.
+passthrough:
+  enabled: false
+  replicaCount: 2
+  # Real production traffic can land here during a failover — scale it accordingly.
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  image: nginx:1.27-alpine
+  # Must match app.service.port — the swapped Service's targetPort is fixed.
+  # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
+  mode: auto
+  # Polls app's own /health/live; flips the proxy Service selector on failure.
+  watcher:
+    enabled: true
+    image: curlimages/curl:8.11.0
+    pollIntervalSeconds: 5
+    failureThreshold: 3
+    successThreshold: 3
+    healthPath: /health/live
+  # Defaults to app.container.env.PROXY_HOST.
+  snowflakeHost: ""
+  # Defaults to app.container.env.BIGQUERY_HOST. Takes precedence over Snowflake if both resolve.
+  bigqueryHost: ""
+  service:
+    type: ClusterIP
+  # Sized to match the main proxy — a real failover can send it full production traffic.
+  resources:
+    requests:
+      memory: "300Mi"
+      cpu: "250m"
+    limits:
+      memory: "600Mi"
 
 resources:
   requests:

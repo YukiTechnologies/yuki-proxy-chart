@@ -35,7 +35,27 @@ INGESTION_KEY
 {{- end -}}
 {{- end -}}
 
-{{/* Short env token for secret paths: staging→stg, production→prod, development→dev. */}}
+{{/* Snowflake URL the passthrough forwards to; trailing "" avoids "<no value>" when unset. */}}
+{{- define "proxy.passthrough.snowflakeUrl" -}}
+{{- or .Values.passthrough.snowflakeHost .Values.app.container.env.PROXY_HOST "" -}}
+{{- end -}}
+
+{{/* BigQuery URL the passthrough forwards to — same fixed Google endpoint for every account. */}}
+{{- define "proxy.passthrough.bigqueryUrl" -}}
+{{- or .Values.passthrough.bigqueryHost .Values.app.container.env.BIGQUERY_HOST "" -}}
+{{- end -}}
+
+{{/* Whichever backend is configured — BigQuery takes precedence, matching ClientProxy's own route order. */}}
+{{- define "proxy.passthrough.upstreamUrl" -}}
+{{- include "proxy.passthrough.bigqueryUrl" . | default (include "proxy.passthrough.snowflakeUrl" .) -}}
+{{- end -}}
+
+{{/* Real upstream host — the client's request instead targets Yuki's hosted domain, so this is what gets rewritten in. */}}
+{{- define "proxy.passthrough.upstreamHostHeader" -}}
+{{- (include "proxy.passthrough.upstreamUrl" . | urlParse).host -}}
+{{- end -}}
+
+{{/* Env token for secret paths: staging→stg, production→prod, development→dev. */}}
 {{- define "mcp.envShort" -}}
 {{- $env := required "app.container.env.ENVIRONMENT is required when mcp.enabled" .Values.app.container.env.ENVIRONMENT | lower -}}
 {{- if   eq $env "staging"     -}}stg
@@ -45,7 +65,7 @@ INGESTION_KEY
 {{- end -}}
 {{- end -}}
 
-{{/* AWS Secrets Manager path for the MCP OAuth client creds: {envShort}/yuki-mcp/{account-id}. */}}
+{{/* Secrets Manager path for MCP OAuth client creds. */}}
 {{- define "mcp.secretName" -}}
 {{- $acct := required "app.container.env.ACCOUNT_GUID is required when mcp.enabled" .Values.app.container.env.ACCOUNT_GUID -}}
 {{- printf "%s/yuki-mcp/%s" (include "mcp.envShort" .) $acct -}}

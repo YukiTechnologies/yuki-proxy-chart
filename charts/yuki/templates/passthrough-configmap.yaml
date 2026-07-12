@@ -1,0 +1,64 @@
+{{- if .Values.passthrough.enabled -}}
+{{- $upstreamUrl := include "proxy.passthrough.upstreamUrl" . -}}
+{{- if not $upstreamUrl -}}
+{{- fail "passthrough.enabled is true but no upstream host is set — set passthrough.bigqueryHost/app.container.env.BIGQUERY_HOST or passthrough.snowflakeHost/app.container.env.PROXY_HOST." -}}
+{{- end -}}
+{{- if not (hasPrefix "https://" $upstreamUrl) -}}
+{{- fail (printf "passthrough upstream URL %q must be https:// — this proxies live Snowflake/BigQuery credentials and must not fall back to plaintext" $upstreamUrl) -}}
+{{- end -}}
+{{- $upstreamParts := urlParse $upstreamUrl -}}
+{{- if or (not $upstreamParts.host) $upstreamParts.path $upstreamParts.query $upstreamParts.fragment -}}
+{{- fail (printf "passthrough upstream URL %q must be a bare scheme://host with no path/query/fragment — proxy_pass via $upstream doesn't rewrite the request URI" $upstreamUrl) -}}
+{{- end -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-passthrough
+  labels:
+    app: {{ .Values.app.name }}-passthrough
+    group: {{ .Values.app.group }}
+data:
+  # __RESOLVER_IP__ is substituted at container start from /etc/resolv.conf — stock nginx has
+  # no "read resolv.conf yourself" option (that's an OpenResty-only extension).
+  nginx.conf.template: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+    events { worker_connections 1024; }
+    http {
+      client_max_body_size 0;
+      resolver __RESOLVER_IP__ valid=30s ipv6=off;
+      server {
+        listen {{ .Values.app.service.port }};
+
+        location /healthz {
+          access_log off;
+          return 200 "ok";
+          add_header Content-Type text/plain;
+        }
+
+        # ALB target-group health check — must answer directly, not fall through to Snowflake.
+        location = /health/live {
+          access_log off;
+          return 200 "ok";
+          add_header Content-Type text/plain;
+        }
+
+        location / {
+          # $upstream forces periodic re-resolution; a literal proxy_pass target is resolved once at startup.
+          set $upstream {{ $upstreamUrl }};
+          proxy_pass $upstream;
+          proxy_ssl_server_name on;
+          proxy_ssl_verify on;
+          proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+          # Client targets Yuki's hosted domain, not the real upstream — rewrite to the real host.
+          proxy_set_header Host {{ include "proxy.passthrough.upstreamHostHeader" . }};
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_http_version 1.1;
+          proxy_set_header Connection "";
+          proxy_read_timeout 600s;
+          proxy_send_timeout 600s;
+        }
+      }
+    }
+{{- end }}
