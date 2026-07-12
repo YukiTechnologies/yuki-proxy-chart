@@ -8,8 +8,8 @@
 {{- fail (printf "passthrough upstream URL %q must include a scheme (https://...) or the Host header renders empty" $upstreamUrl) -}}
 {{- end -}}
 {{- $upstreamParts := urlParse $upstreamUrl -}}
-{{- if or $upstreamParts.path $upstreamParts.query $upstreamParts.fragment -}}
-{{- fail (printf "passthrough upstream URL %q must be host-only (no path/query/fragment) — proxy_pass via $upstream doesn't rewrite the request URI" $upstreamUrl) -}}
+{{- if or (not $upstreamParts.host) $upstreamParts.path $upstreamParts.query $upstreamParts.fragment -}}
+{{- fail (printf "passthrough upstream URL %q must be a bare scheme://host with no path/query/fragment — proxy_pass via $upstream doesn't rewrite the request URI" $upstreamUrl) -}}
 {{- end -}}
 apiVersion: v1
 kind: ConfigMap
