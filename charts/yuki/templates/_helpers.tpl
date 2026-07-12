@@ -40,7 +40,7 @@ INGESTION_KEY
 {{- or .Values.passthrough.snowflakeHost .Values.app.container.env.PROXY_HOST "" -}}
 {{- end -}}
 
-{{/* Host header for the Snowflake passthrough — Snowflake sees Yuki's hosted domain, not its own. */}}
+{{/* Snowflake's real host — the client's request instead targets Yuki's hosted domain, so this is what gets rewritten in. */}}
 {{- define "proxy.passthrough.snowflakeHostHeader" -}}
 {{- (include "proxy.passthrough.snowflakeUrl" . | urlParse).host -}}
 {{- end -}}
