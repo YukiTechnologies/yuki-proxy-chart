@@ -1,13 +1,14 @@
 {{- if .Values.passthrough.enabled -}}
-{{- $snowflakeUrl := include "proxy.passthrough.snowflakeUrl" . -}}
-{{- if not $snowflakeUrl -}}
-{{- fail "passthrough.enabled is true but no Snowflake host is set — set passthrough.snowflakeHost or app.container.env.PROXY_HOST." -}}
+{{- $upstreamUrl := include "proxy.passthrough.upstreamUrl" . -}}
+{{- $isBigQuery := include "proxy.passthrough.isBigQuery" . -}}
+{{- if not $upstreamUrl -}}
+{{- fail "passthrough.enabled is true but no upstream host is set — set passthrough.bigqueryHost/app.container.env.BIGQUERY_HOST or passthrough.snowflakeHost/app.container.env.PROXY_HOST." -}}
 {{- end -}}
-{{- if not (or (hasPrefix "http://" $snowflakeUrl) (hasPrefix "https://" $snowflakeUrl)) -}}
-{{- fail (printf "passthrough Snowflake URL %q must include a scheme (https://...) or the Host header renders empty" $snowflakeUrl) -}}
+{{- if not (or (hasPrefix "http://" $upstreamUrl) (hasPrefix "https://" $upstreamUrl)) -}}
+{{- fail (printf "passthrough upstream URL %q must include a scheme (https://...) or the Host header renders empty" $upstreamUrl) -}}
 {{- end -}}
-{{- if hasSuffix "/" $snowflakeUrl -}}
-{{- fail (printf "passthrough Snowflake URL %q must not have a trailing slash — this changes proxy_pass URI rewriting" $snowflakeUrl) -}}
+{{- if hasSuffix "/" $upstreamUrl -}}
+{{- fail (printf "passthrough upstream URL %q must not have a trailing slash — this changes proxy_pass URI rewriting" $upstreamUrl) -}}
 {{- end -}}
 apiVersion: v1
 kind: ConfigMap
@@ -44,12 +45,18 @@ data:
 
         location / {
           # $upstream forces periodic re-resolution; a literal proxy_pass target is resolved once at startup.
-          set $upstream {{ include "proxy.passthrough.snowflakeUrl" . }};
+          set $upstream {{ $upstreamUrl }};
           proxy_pass $upstream;
           proxy_ssl_server_name on;
           proxy_ssl_verify on;
           proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+          {{- if $isBigQuery }}
+          # Client already targets the real BigQuery host — forward it unchanged.
+          proxy_set_header Host $http_host;
+          {{- else }}
+          # Client targets Yuki's hosted domain, not Snowflake's — rewrite to the real host.
           proxy_set_header Host {{ include "proxy.passthrough.snowflakeHostHeader" . }};
+          {{- end }}
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_http_version 1.1;

@@ -94,7 +94,7 @@ ingress:
     servicePortName: ""
     servicePortNumber: ""
 
-# Bypass path: forwards straight to Snowflake when the proxy is unhealthy.
+# Bypass path: forwards straight to Snowflake/BigQuery when the proxy is unhealthy.
 passthrough:
   enabled: false
   replicaCount: 2
@@ -119,6 +119,8 @@ passthrough:
     healthPath: /health/live
   # Defaults to app.container.env.PROXY_HOST.
   snowflakeHost: ""
+  # Defaults to app.container.env.BIGQUERY_HOST. Takes precedence over Snowflake if both resolve.
+  bigqueryHost: ""
   service:
     type: ClusterIP
   # Sized to match the main proxy — a real failover can send it full production traffic.

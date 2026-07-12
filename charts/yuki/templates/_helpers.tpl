@@ -35,14 +35,28 @@ INGESTION_KEY
 {{- end -}}
 {{- end -}}
 
-{{/* Snowflake URL the passthrough forwards to. */}}
+{{/* Snowflake URL the passthrough forwards to; trailing "" avoids "<no value>" when unset. */}}
 {{- define "proxy.passthrough.snowflakeUrl" -}}
-{{- .Values.passthrough.snowflakeHost | default .Values.app.container.env.PROXY_HOST -}}
+{{- or .Values.passthrough.snowflakeHost .Values.app.container.env.PROXY_HOST "" -}}
 {{- end -}}
 
-{{/* Host header for the passthrough. */}}
+{{/* Host header for the Snowflake passthrough — Snowflake sees Yuki's hosted domain, not its own. */}}
 {{- define "proxy.passthrough.snowflakeHostHeader" -}}
 {{- (include "proxy.passthrough.snowflakeUrl" . | urlParse).host -}}
+{{- end -}}
+
+{{/* BigQuery URL the passthrough forwards to — same fixed Google endpoint for every account. */}}
+{{- define "proxy.passthrough.bigqueryUrl" -}}
+{{- or .Values.passthrough.bigqueryHost .Values.app.container.env.BIGQUERY_HOST "" -}}
+{{- end -}}
+
+{{/* Whichever backend is configured — BigQuery takes precedence, matching ClientProxy's own route order. */}}
+{{- define "proxy.passthrough.upstreamUrl" -}}
+{{- include "proxy.passthrough.bigqueryUrl" . | default (include "proxy.passthrough.snowflakeUrl" .) -}}
+{{- end -}}
+
+{{- define "proxy.passthrough.isBigQuery" -}}
+{{- if include "proxy.passthrough.bigqueryUrl" . -}}true{{- end -}}
 {{- end -}}
 
 {{/* Env token for secret paths: staging→stg, production→prod, development→dev. */}}
