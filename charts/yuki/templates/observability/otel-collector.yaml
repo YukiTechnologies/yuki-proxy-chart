@@ -31,7 +31,9 @@ data:
       otlphttp/groundcover:
         endpoint: {{ $gc.endpoint }}
         headers:
-          Authorization: "Bearer ${env:GROUNDCOVER_API_KEY}"
+          # groundcover authenticates OTLP ingestion with an `apikey` header
+          # (NOT Authorization/Bearer — that is silently dropped server-side).
+          apikey: "${env:GROUNDCOVER_API_KEY}"
           {{- with $gc.envName }}
           x-groundcover-env-name: {{ . | quote }}
           {{- end }}
