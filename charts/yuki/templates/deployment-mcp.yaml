@@ -98,6 +98,12 @@ spec:
               value: /tmp
             - name: AWS_REGION
               value: {{ .Values.app.container.env.AWS_REGION | default "eu-north-1" | quote }}
+            # Reuses the proxy's ElastiCache endpoint so there is one source of truth per
+            # environment; REDIS_CLUSTER is derived so a clustercfg endpoint can't be misflagged.
+            - name: REDIS_URL
+              value: "redis://{{ required "app.container.env.REDIS_HOST is required when mcp.enabled" .Values.app.container.env.REDIS_HOST }}:6379/0"
+            - name: REDIS_CLUSTER
+              value: {{ contains "clustercfg" .Values.app.container.env.REDIS_HOST | quote }}
             - name: YUKI_CLIENT_ID
               valueFrom:
                 secretKeyRef:
