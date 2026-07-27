@@ -98,10 +98,11 @@ spec:
               value: /tmp
             - name: AWS_REGION
               value: {{ .Values.app.container.env.AWS_REGION | default "eu-north-1" | quote }}
+            {{- $redisHost := required "app.container.env.REDIS_HOST is required when mcp.enabled" .Values.app.container.env.REDIS_HOST }}
             - name: REDIS_URL
-              value: "redis://{{ required "app.container.env.REDIS_HOST is required when mcp.enabled" .Values.app.container.env.REDIS_HOST }}:6379/0"
+              value: "redis://{{ $redisHost }}{{ if not (contains ":" $redisHost) }}:6379{{ end }}/0"
             - name: REDIS_CLUSTER
-              value: {{ contains "clustercfg" .Values.app.container.env.REDIS_HOST | quote }}
+              value: {{ contains "clustercfg" $redisHost | quote }}
             - name: YUKI_CLIENT_ID
               valueFrom:
                 secretKeyRef:
