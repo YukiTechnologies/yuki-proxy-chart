@@ -3,8 +3,13 @@
 Manual, per-customer `gcloud` grant for a self-hosted proxy on GCP to pull
 `yuki-proxy` from our GAR. No app code, no Terraform (see YU-2385).
 
-**Image:** `us-east1-docker.pkg.dev/yuki-infra-project/yuki-proxy/yuki-proxy`
-(project `yuki-infra-project`, location `us-east1`, repo `yuki-proxy`).
+**Image:** `us-east1-docker.pkg.dev/yuki-infra-project/yuki-proxy-release/yuki-proxy`
+(project `yuki-infra-project`, location `us-east1`, repo `yuki-proxy-release`).
+
+`yuki-proxy-release` carries **semver tags only**. The `yuki-proxy` repo holds
+every CI build (`pr-*`, `main-*`, bare SHAs) and is internal — never grant a
+customer on it. Artifact Registry IAM is repo-level, so a grant there would
+expose every unreleased build.
 
 ## 1. Ask the customer
 
@@ -24,7 +29,7 @@ identity.
 ## 2. Grant
 
 ```
-gcloud artifacts repositories add-iam-policy-binding yuki-proxy \
+gcloud artifacts repositories add-iam-policy-binding yuki-proxy-release \
   --location=us-east1 \
   --project=yuki-infra-project \
   --member=serviceAccount:<PRINCIPAL> \
@@ -39,17 +44,18 @@ Set the full image reference (repo + tag together — there's no separate
 `image.repository`/`image.tag` split):
 
 ```
---set app.container.image=us-east1-docker.pkg.dev/yuki-infra-project/yuki-proxy/yuki-proxy:<tag>
+--set app.container.image=us-east1-docker.pkg.dev/yuki-infra-project/yuki-proxy-release/yuki-proxy:<tag>
 ```
 
 or in their values file, `app.container.image: ...`.
 
-Pin a **semver release tag** (e.g. `0.0.408`) — never `latest`. Other tags
-exist (`<short-sha>`, `main-<short-sha>`, `pr-<n>-<sha>`) but aren't for
-customer use.
+Pin a **semver release tag** (e.g. `0.0.417`) — never `latest`. The release
+repo carries nothing else, so any tag in it is safe to pin.
 
-Non-GKE case: wire the customer's `dockerconfigjson` secret via the chart's
-`imagePullSecrets` value (see `values.yaml` — landing in YU-2387).
+Non-GKE only: wire the customer's `dockerconfigjson` secret via the chart's
+`imagePullSecrets` value (YU-2387). This is the fallback path — every cluster
+we control pulls by node identity and sets no pull secret at all, so prefer
+granting the node SA whenever the customer is on GKE.
 
 ## 4. Verify
 
@@ -57,7 +63,7 @@ Either the customer pulls/deploys successfully, or the operator confirms the
 binding:
 
 ```
-gcloud artifacts repositories get-iam-policy yuki-proxy \
+gcloud artifacts repositories get-iam-policy yuki-proxy-release \
   --location=us-east1 --project=yuki-infra-project
 ```
 
@@ -69,10 +75,11 @@ Same command with `remove-iam-policy-binding` instead of `add-iam-policy-binding
 
 ## Notes / known limits
 
-- **Risk (accepted):** `roles/artifactregistry.reader` on the repo grants read
-  of every tag in it, including `pr-*` and unreleased `main-*` builds — all
-  branches push to this one prod GAR repo. No fix planned; operator should be
-  aware.
+- **Grant the right repo.** `roles/artifactregistry.reader` is repo-level —
+  there is no per-tag ACL. Granting on `yuki-proxy` instead of
+  `yuki-proxy-release` hands the customer every `pr-*` and unreleased `main-*`
+  build, and lets them pin an unreviewed PR image in production. The two repo
+  names differ by one suffix; check the command before running it.
 - **Single-region (accepted):** GAR here is `us-east1` only (no cross-region
   replication like ECR). Cross-region pulls just take longer; pulls happen
   once per deploy. Open item, no work planned.
