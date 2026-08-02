@@ -140,7 +140,7 @@ resources:
 
 # Pull credentials for the app image, e.g. when nodes can't natively read the
 # registry (GAR, a private ECR repo, etc.). Empty = rely on node-level pull creds.
-imagePullSecrets: [ ]
+imagePullSecrets: []
 
 affinity: { }
 tolerations: [ ]
