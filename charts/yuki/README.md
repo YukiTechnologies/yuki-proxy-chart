@@ -40,9 +40,8 @@ service account key it was built from:
 kubectl delete secret <secret-name> -n <namespace>
 ```
 
-Then drop `imagePullSecrets` from your values file, and ask Yuki support to
-revoke the registry grant for that service account — deleting the secret stops
-this cluster pulling, but the grant itself lives on our side.
+Then drop `imagePullSecrets` from your values file. This stops the cluster
+pulling; the registry grant for the service account is managed by Yuki.
 
 ## Access to AWS secrets using SA
 
