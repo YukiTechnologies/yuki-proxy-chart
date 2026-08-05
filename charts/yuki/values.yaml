@@ -190,8 +190,7 @@ observability:
     envName: ""         # Groundcover env name; defaults to the release name
 
   otlp:
-    # k8s distro has otlp/batch/otlphttp; pin >= 0.127.0 (older arm64 won't exec).
-    image: otel/opentelemetry-collector-k8s:0.127.0
+    image: otel/opentelemetry-collector-k8s:0.158.0
     replicaCount: 1
     grpcPort: 4317
     httpPort: 4318
