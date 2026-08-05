@@ -172,7 +172,10 @@ external-secrets:
 global:
   groundcover_token: ""
 
-# Self-hosted customers: OTel Collector is the recommended backend — uncomment to switch:
+# Self-hosted customers: OTel Collector is the recommended backend — uncomment to switch,
+# and comment out (or delete) the whole "observability:" block below: YAML doesn't merge
+# duplicate top-level keys, so the later block would otherwise win outright and this one
+# would be silently ignored.
 # observability:
 #   backend: otlp
 #   groundcover:
