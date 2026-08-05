@@ -172,6 +172,16 @@ external-secrets:
 global:
   groundcover_token: ""
 
+# Self-hosted customers: OTel Collector is the recommended backend — uncomment to switch:
+# observability:
+#   backend: otlp
+#   groundcover:
+#     envName: yuki-proxy-<customer>
+# global:
+#   groundcover_token: gcik_...
+# groundcover:
+#   enabled: false
+
 # Observability backend shipped with the proxy — exactly one. Either disables
 # the legacy Datadog Serilog sink (SERILOG_DATADOG_ENABLED=false).
 #   groundcoverSensor: eBPF sensor (subchart); off until groundcover.enabled=true.
