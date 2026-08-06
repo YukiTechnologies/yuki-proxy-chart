@@ -9,7 +9,6 @@ app:
       ASPNETCORE_ENVIRONMENT: Prod
       COMPUTE_HOST: https://prod.yukicomputing.com
       SYSTEM_HOST: https://prod.yukicomputing.com
-      # SERILOG_DATADOG_ENABLED is driven off observability.backend (always off).
       PROXY_HOST:
       REDIS_HOST:
       HEALTH_CHECK_REDIS_TIMEOUT_MS: 200
@@ -69,13 +68,6 @@ externalSecrets:
   #     secretKey: /snowflake/users/user2/credentials
   #     privateKeyProperty: private_key
   #     # No passphrase for user2
-
-# Datadog APM tracing (execute → retry → monitor → complete).
-# sampleRate: "0" + samplingRules = only retries/failures are traced (lowest cost).
-datadogApm:
-  enabled: false
-  sampleRate: "0"   # "1.0" to trace everything
-  samplingRules: '[{"name":"yuki.query.retry","sample_rate":1.0},{"name":"yuki.query.complete","tags":{"finalStatus":"failed"},"sample_rate":1.0}]'
 
 hpa:
   enabled: true
@@ -186,8 +178,7 @@ global:
 # groundcover:
 #   enabled: false
 
-# Observability backend shipped with the proxy — exactly one. Either disables
-# the legacy Datadog Serilog sink (SERILOG_DATADOG_ENABLED=false).
+# Observability backend shipped with the proxy — exactly one.
 #   groundcoverSensor: eBPF sensor (subchart); off until groundcover.enabled=true.
 #   otlp:              OTel Collector that forwards OTLP to Groundcover.
 # This is the SaaS default (Groundcover eBPF sensor). Self-hosted customers should
