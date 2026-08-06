@@ -180,6 +180,8 @@ global:
 #   backend: otlp
 #   groundcover:
 #     envName: yuki-proxy-<customer>
+#   otlp:
+#     image: otel/opentelemetry-collector-k8s:0.158.0
 # global:
 #   groundcover_token: gcik_...
 # groundcover:
@@ -189,6 +191,8 @@ global:
 # the legacy Datadog Serilog sink (SERILOG_DATADOG_ENABLED=false).
 #   groundcoverSensor: eBPF sensor (subchart); off until groundcover.enabled=true.
 #   otlp:              OTel Collector that forwards OTLP to Groundcover.
+# This is the SaaS default (Groundcover eBPF sensor). Self-hosted customers should
+# replace this whole block with the commented "observability:" block above.
 observability:
   backend: groundcoverSensor
 
