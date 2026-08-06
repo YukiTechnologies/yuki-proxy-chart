@@ -172,10 +172,9 @@ external-secrets:
 global:
   groundcover_token: ""
 
-# Self-hosted customers: OTel Collector is the recommended backend — uncomment to switch,
-# and comment out (or delete) the whole "observability:" block below: YAML doesn't merge
-# duplicate top-level keys, so the later block would otherwise win outright and this one
-# would be silently ignored.
+# Self-hosted customers: OTel Collector is the recommended backend — uncomment to switch.
+# Replace the existing top-level "global:", "observability:", and "groundcover:" maps
+# with this example. Do not leave duplicate top-level keys enabled.
 # observability:
 #   backend: otlp
 #   groundcover:
@@ -192,7 +191,8 @@ global:
 #   groundcoverSensor: eBPF sensor (subchart); off until groundcover.enabled=true.
 #   otlp:              OTel Collector that forwards OTLP to Groundcover.
 # This is the SaaS default (Groundcover eBPF sensor). Self-hosted customers should
-# replace this whole block with the commented "observability:" block above.
+# replace this map — plus the top-level "global:" and "groundcover:" maps — with the
+# commented example above.
 observability:
   backend: groundcoverSensor
 
