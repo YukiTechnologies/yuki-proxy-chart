@@ -76,24 +76,14 @@ hpa:
   targetCPUUtilizationPercentage: 90
   # Leave unset — proxy memory is per-pod baseline, so this target ratchets to maxReplicas and never scales in.
   targetMemoryUtilizationPercentage: null
+  # scaleUp deliberately omitted — it inherits the fast Kubernetes default.
   behavior:
     scaleDown:
-      stabilizationWindowSeconds: 300
-      selectPolicy: Min
+      stabilizationWindowSeconds: 600
       policies:
-        - type: Percent
-          value: 25
-          periodSeconds: 60
         - type: Pods
-          value: 4
+          value: 1
           periodSeconds: 60
-    scaleUp:
-      stabilizationWindowSeconds: 60
-      selectPolicy: Max
-      policies:
-        - type: Percent
-          value: 50
-          periodSeconds: 30
 
 proxyDeploymentType: self_hosted
 
@@ -118,22 +108,11 @@ passthrough:
     targetMemoryUtilizationPercentage: 80
     behavior:
       scaleDown:
-        stabilizationWindowSeconds: 300
-        selectPolicy: Min
+        stabilizationWindowSeconds: 600
         policies:
-          - type: Percent
-            value: 25
-            periodSeconds: 60
           - type: Pods
-            value: 4
+            value: 1
             periodSeconds: 60
-      scaleUp:
-        stabilizationWindowSeconds: 60
-        selectPolicy: Max
-        policies:
-          - type: Percent
-            value: 50
-            periodSeconds: 30
   image: nginx:1.27-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
@@ -316,22 +295,11 @@ mcp:
     targetMemoryUtilizationPercentage: 75
     behavior:
       scaleDown:
-        stabilizationWindowSeconds: 300
-        selectPolicy: Min
+        stabilizationWindowSeconds: 600
         policies:
-          - type: Percent
-            value: 25
-            periodSeconds: 60
           - type: Pods
-            value: 4
+            value: 1
             periodSeconds: 60
-      scaleUp:
-        stabilizationWindowSeconds: 60
-        selectPolicy: Max
-        policies:
-          - type: Percent
-            value: 50
-            periodSeconds: 30
   resources:
     requests:
       cpu: "100m"
