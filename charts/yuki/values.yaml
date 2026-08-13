@@ -3,6 +3,8 @@ app:
   group: default-app-group
   replicaCount: 4
   container:
+    # GCP/GAR: override with e.g. us-east1-docker.pkg.dev/<project>/<repo>/yuki-proxy:<tag>
+    # and set imagePullSecrets below if the nodes can't read the registry natively.
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.424
     port: 5162
     env:
@@ -129,6 +131,10 @@ resources:
     cpu: "250m"
   limits:
     memory: "600Mi"
+
+# Pull credentials for the app image, e.g. when nodes can't natively read the
+# registry (GAR, a private ECR repo, etc.). Empty = rely on node-level pull creds.
+imagePullSecrets: []
 
 affinity: { }
 tolerations: [ ]

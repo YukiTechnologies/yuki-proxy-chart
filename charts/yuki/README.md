@@ -17,6 +17,7 @@ To install the chart with the release name `yuki/proxy`:
 | `app.container.env.REDIS_HOST`        |          Redis host          |      yes |        none        |
 | `app.name`                            |     The name for the app     |       no |     yuki-proxy     |
 | `hpa.enabled`                         |      Service HPA config      |       no |        true        |
+| `imagePullSecrets`                    |      Image pull secrets      |       no |        none        |
 | `ingress.enabled`                     |        Ingress config        |       no |        true        |
 | `ingress.name`                        |         Ingress name         |       no | yuki-proxy-ingress |
 | `ingress.annotations`                 |   Your ingress annotations   |       no |        none        |
@@ -29,6 +30,18 @@ To install the chart with the release name `yuki/proxy`:
 helm repo add yuki https://yukitechnologies.github.io/yuki-proxy-chart
 helm install yuki-proxy yuki/proxy -f values.yaml
 ```
+
+## Removing image pull access
+
+When a self-hosted proxy is decommissioned, delete the pull secret and the
+service account key it was built from:
+
+```bash
+kubectl delete secret <secret-name> -n <namespace>
+```
+
+Then drop `imagePullSecrets` from your values file. This stops the cluster
+pulling; the registry grant for the service account is managed by Yuki.
 
 ## Access to AWS secrets using SA
 
