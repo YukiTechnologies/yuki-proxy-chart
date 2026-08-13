@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - '*'  # Trigger on any branch push
+      - '**'  # '*' does not match branch names containing a slash
 
 jobs:
   release:
