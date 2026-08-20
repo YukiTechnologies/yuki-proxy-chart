@@ -12,10 +12,17 @@ spec:
     name: {{ .Values.app.name }}-passthrough
   minReplicas: {{ .Values.passthrough.hpa.minReplicas }}
   maxReplicas: {{ .Values.passthrough.hpa.maxReplicas }}
-  {{- with .Values.passthrough.hpa.behavior }}
   behavior:
+    {{- with .Values.passthrough.hpa.behavior }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- else }}
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    {{- end }}
   metrics:
     {{- with .Values.passthrough.hpa.targetCPUUtilizationPercentage }}
     - type: Resource

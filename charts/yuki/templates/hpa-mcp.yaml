@@ -12,10 +12,17 @@ spec:
     name: yuki-mcp
   minReplicas: {{ .Values.mcp.hpa.minReplicas }}
   maxReplicas: {{ .Values.mcp.hpa.maxReplicas }}
-  {{- with .Values.mcp.hpa.behavior }}
   behavior:
+    {{- with .Values.mcp.hpa.behavior }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- else }}
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    {{- end }}
   metrics:
     {{- with .Values.mcp.hpa.targetCPUUtilizationPercentage }}
     - type: Resource
