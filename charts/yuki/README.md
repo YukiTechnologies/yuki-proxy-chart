@@ -40,8 +40,14 @@ service account key it was built from:
 kubectl delete secret <secret-name> -n <namespace>
 ```
 
-Then drop `imagePullSecrets` from your values file. This stops the cluster
-pulling; the registry grant for the service account is managed by Yuki.
+Then drop `imagePullSecrets` from your values file and apply it, so the live
+pods stop referencing the deleted secret:
+
+```bash
+helm upgrade yuki-proxy yuki/proxy -f values.yaml
+```
+
+The registry grant for the service account is managed by Yuki.
 
 ## Access to AWS secrets using SA
 
