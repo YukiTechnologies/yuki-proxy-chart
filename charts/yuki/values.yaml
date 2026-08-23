@@ -147,7 +147,7 @@ topologySpreadConstraints: []
 #         app: yuki-proxy
 
 podDisruptionBudget:
-  enabled: false
+  enabled: true
   maxUnavailable: 1
   # unhealthyPodEvictionPolicy: IfHealthyBudget  # K8s 1.27+
 
