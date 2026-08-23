@@ -33,21 +33,25 @@ helm install yuki-proxy yuki/proxy -f values.yaml
 
 ## Removing image pull access
 
-When a self-hosted proxy is decommissioned, delete the pull secret and the
-service account key it was built from:
+When a self-hosted proxy is decommissioned, first drop `imagePullSecrets` from
+your values file and apply it, so no live pod still references the secret:
+
+```bash
+helm upgrade yuki-proxy yuki/proxy -f values.yaml
+kubectl rollout status deployment/yuki-proxy -n <namespace>
+```
+
+Repeat the rollout check for `yuki-mcp` if you have `mcp.enabled: true`. Once no
+pod references it, delete the secret and the service account key it was built
+from:
 
 ```bash
 kubectl delete secret <secret-name> -n <namespace>
 ```
 
-Then drop `imagePullSecrets` from your values file and apply it, so the live
-pods stop referencing the deleted secret:
-
-```bash
-helm upgrade yuki-proxy yuki/proxy -f values.yaml
-```
-
-The registry grant for the service account is managed by Yuki.
+Revoking the service account's read access on the GAR repo is done by Yuki and
+is not driven from this chart. Once you have deleted the secret, confirm with
+your Yuki contact that the grant has been removed.
 
 ## Access to AWS secrets using SA
 
