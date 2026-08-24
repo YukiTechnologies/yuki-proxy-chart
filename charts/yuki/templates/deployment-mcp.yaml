@@ -84,9 +84,6 @@ spec:
               value: {{ .Values.app.container.env.COMPANY_GUID | quote }}
             - name: SYSTEM_API_ACCOUNT_ID
               value: {{ .Values.app.container.env.ACCOUNT_GUID | quote }}
-            # Log-line tenant identity — same ACCOUNT_NAME/COMPANY_NAME the proxy
-            # stamps, so proxy and MCP logs correlate. Both optional: yuki-mcp
-            # defaults them to empty and omits CompanyName when unset.
             - name: ACCOUNT_NAME
               value: {{ .Values.app.container.env.ACCOUNT_NAME | default "" | quote }}
             - name: COMPANY_NAME
