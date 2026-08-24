@@ -84,6 +84,10 @@ spec:
               value: {{ .Values.app.container.env.COMPANY_GUID | quote }}
             - name: SYSTEM_API_ACCOUNT_ID
               value: {{ .Values.app.container.env.ACCOUNT_GUID | quote }}
+            - name: ACCOUNT_NAME
+              value: {{ .Values.app.container.env.ACCOUNT_NAME | default "" | quote }}
+            - name: COMPANY_NAME
+              value: {{ .Values.app.container.env.COMPANY_NAME | default "" | quote }}
             - name: SNOWFLAKE_ACCOUNT
               value: {{ .Values.mcp.snowflakeAccount | quote }}
             - name: MCP_INTEGRATION_NAME
