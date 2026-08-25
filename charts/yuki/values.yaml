@@ -82,6 +82,9 @@ proxyDeploymentType: self_hosted
 
 ingress:
   enabled: false
+  annotations:
+    # Keep below app.terminationGracePeriodSeconds — the pod must outlive the LB's drain window.
+    alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=45
   # Overrides the Ingress backend, e.g. to route to an ALB "actions." target.
   backend:
     serviceName: ""
