@@ -38,7 +38,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: {{ .Values.app.terminationGracePeriodSeconds }}
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}

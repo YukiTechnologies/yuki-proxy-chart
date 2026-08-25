@@ -28,7 +28,7 @@ spec:
         group: {{ .Values.app.group }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.serviceAccountName | default "default" }}
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: {{ .Values.mcp.terminationGracePeriodSeconds }}
       affinity:
         {{- with .Values.affinity.nodeAffinity }}
         nodeAffinity:

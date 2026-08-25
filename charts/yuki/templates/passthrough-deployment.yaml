@@ -19,7 +19,7 @@ spec:
         app: {{ .Values.app.name }}-passthrough
         group: {{ .Values.app.group }}
     spec:
-      terminationGracePeriodSeconds: 15
+      terminationGracePeriodSeconds: {{ .Values.passthrough.terminationGracePeriodSeconds }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
