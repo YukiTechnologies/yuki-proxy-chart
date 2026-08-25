@@ -3,7 +3,7 @@ app:
   group: default-app-group
   replicaCount: 4
   # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
-  terminationGracePeriodSeconds: 30
+  terminationGracePeriodSeconds: 60
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.430
     port: 5162
