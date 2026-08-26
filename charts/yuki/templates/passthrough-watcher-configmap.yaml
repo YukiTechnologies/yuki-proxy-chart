@@ -102,26 +102,17 @@ data:
         fi
         fail_count=0; success_count=0
       else
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" -m 3 "$HEALTH_URL") || http_code="000"
-        case "$http_code" in
-          200)
-            success_count=$((success_count + 1)); fail_count=0
-            health=healthy
-            ;;
-          404)
-            # Route doesn't exist yet on this account's proxy image (mid-rollout) — the
-            # process answered, it just doesn't have this endpoint. Neither pass nor fail.
-            health=unavailable
-            ;;
-          *)
-            fail_count=$((fail_count + 1)); success_count=0
-            health=unhealthy
-            ;;
-        esac
+        if curl -sf -o /dev/null -m 3 "$HEALTH_URL"; then
+          success_count=$((success_count + 1)); fail_count=0
+          health=healthy
+        else
+          fail_count=$((fail_count + 1)); success_count=0
+          health=unhealthy
+        fi
         # Quiet in the steady state (healthy, on proxy, nothing happening) — every
-        # poll logs otherwise: any failure, unavailable, or anything while on the passthrough.
-        if [ "$health" != "healthy" ] || [ "$current" != "$PROXY_LABEL" ]; then
-          echo "$(date -Iseconds) bypass-watcher: poll proxy=$health code=$http_code current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
+        # poll logs otherwise: any failure, or anything while on the passthrough.
+        if [ "$health" = "unhealthy" ] || [ "$current" != "$PROXY_LABEL" ]; then
+          echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
         fi
 
         if [ "$current" = "$PROXY_LABEL" ] && [ "$fail_count" -ge "$FAILURE_THRESHOLD" ]; then
