@@ -102,7 +102,7 @@ data:
         fi
         fail_count=0; success_count=0
       else
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" -m 3 "$HEALTH_URL" || echo "000")
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" -m 3 "$HEALTH_URL") || http_code="000"
         case "$http_code" in
           200)
             success_count=$((success_count + 1)); fail_count=0
