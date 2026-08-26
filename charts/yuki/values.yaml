@@ -102,9 +102,6 @@ passthrough:
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
   # Polls app's own /health/passthrough; flips the proxy Service selector on failure.
-  # Deliberately NOT /health/live (kubelet's own liveness path, hardcoded in deployment.yaml) —
-  # /health/passthrough also factors in the per-account bypass toggle, and coupling that to
-  # kubelet's restart decision would turn a config toggle into a pod-restart trigger.
   watcher:
     enabled: true
     image: curlimages/curl:8.11.0
