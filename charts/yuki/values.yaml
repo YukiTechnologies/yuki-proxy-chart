@@ -95,7 +95,8 @@ ingress:
 passthrough:
   enabled: false
   replicaCount: 2
-  terminationGracePeriodSeconds: 15
+  # Failover points the proxy Service here, so it inherits the proxy target group's drain window.
+  terminationGracePeriodSeconds: 60
   # Real production traffic can land here during a failover — scale it accordingly.
   hpa:
     enabled: true
@@ -255,7 +256,7 @@ groundcover:
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
   enabled: false
-  terminationGracePeriodSeconds: 30
+  terminationGracePeriodSeconds: 60
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
   baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
@@ -277,7 +278,9 @@ mcp:
   ingress:
     enabled: false
     className: alb         # falls back to .Values.ingress.className if empty
-    annotations: {}        # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+    # Own ALB, so it needs its own drain cap — ingress.annotations is not inherited here.
+    annotations:           # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+      alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=45
   hpa:
     enabled: false
     minReplicas: 1
