@@ -2,6 +2,8 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
+  # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
+  terminationGracePeriodSeconds: 30
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
     port: 5162
@@ -90,6 +92,7 @@ ingress:
 passthrough:
   enabled: false
   replicaCount: 2
+  terminationGracePeriodSeconds: 15
   # Real production traffic can land here during a failover — scale it accordingly.
   hpa:
     enabled: true
@@ -249,6 +252,7 @@ groundcover:
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
   enabled: false
+  terminationGracePeriodSeconds: 30
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
   baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
