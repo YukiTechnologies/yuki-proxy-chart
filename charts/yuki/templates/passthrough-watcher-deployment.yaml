@@ -20,6 +20,9 @@ spec:
       labels:
         app: {{ .Values.app.name }}-passthrough-watcher
         group: {{ .Values.app.group }}
+      annotations:
+        # Rolls the pod whenever the ConfigMap changes — watch.sh only reads it at start.
+        checksum/config: {{ include (print $.Template.BasePath "/passthrough-watcher-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.app.name }}-passthrough-watcher
       securityContext:
