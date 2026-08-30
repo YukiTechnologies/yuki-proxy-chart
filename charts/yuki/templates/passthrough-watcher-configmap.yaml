@@ -27,8 +27,15 @@ data:
     POLL_INTERVAL={{ .Values.passthrough.watcher.pollIntervalSeconds }}
     HEARTBEAT_FILE=/tmp/heartbeat
 
+    # JSON body, not "key=value" text — the log pipeline's ExtractGrokPatterns only
+    # supports capturing the whole line, so ParseJSON is what actually parses fields out.
+    json_escape() {
+      printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+    }
     log() {
-      echo "$(date -Iseconds) bypass-watcher: $* company=${COMPANY_NAME:-} account_guid=${ACCOUNT_GUID:-} company_guid=${COMPANY_GUID:-}"
+      printf '{"timestamp":"%s","event":"%s","company":"%s","account_guid":"%s","company_guid":"%s"}\n' \
+        "$(date -Iseconds)" "$(json_escape "$*")" "$(json_escape "${COMPANY_NAME:-}")" \
+        "${ACCOUNT_GUID:-}" "${COMPANY_GUID:-}"
     }
     log_err() {
       log "$@" >&2
