@@ -2,8 +2,12 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
-  # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
-  terminationGracePeriodSeconds: 60
+  # Must exceed drainTimeoutSeconds + 5s curl margin + shutdownTimeoutSeconds (see proxy.shutdown.validate).
+  terminationGracePeriodSeconds: 75
+  # preStop waits this long for in-flight requests; must cover the ALB's deregistration_delay.
+  drainTimeoutSeconds: 45
+  # Grace left for the app after SIGTERM; drain + shutdown must stay under the grace period.
+  shutdownTimeoutSeconds: 10
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
     port: 5162
@@ -257,6 +261,8 @@ groundcover:
 mcp:
   enabled: false
   terminationGracePeriodSeconds: 60
+  # Keep under terminationGracePeriodSeconds; covers the ALB deregistration_delay above.
+  drainSleepSeconds: 45
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
   baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com

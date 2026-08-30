@@ -147,6 +147,11 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+          lifecycle:
+            preStop:
+              # No drain endpoint here, so just outlive the ALB's deregistration window.
+              exec:
+                command: ["sleep", "{{ .Values.mcp.drainSleepSeconds }}"]
           volumeMounts:
             - name: tmp
               mountPath: /tmp

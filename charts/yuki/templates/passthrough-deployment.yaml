@@ -71,7 +71,8 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "sleep 5"]
+                # SIGTERM is nginx's *fast* shutdown; quit drains in-flight connections first.
+                command: ["/bin/sh", "-c", "sleep 10; nginx -c /tmp/nginx.conf -s quit"]
       volumes:
         - name: nginx-conf
           configMap:

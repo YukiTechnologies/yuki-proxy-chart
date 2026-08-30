@@ -12,6 +12,17 @@
 {{- end -}}
 {{- end -}}
 
+{{/* Fail the render if the shutdown budget cannot fit inside the pod's grace period. */}}
+{{- define "proxy.shutdown.validate" -}}
+{{- $grace := .Values.app.terminationGracePeriodSeconds | int -}}
+{{- $drain := .Values.app.drainTimeoutSeconds | int -}}
+{{- $shutdown := .Values.app.shutdownTimeoutSeconds | int -}}
+{{- /* +5 is the preStop curl's own margin over the drain wait. */ -}}
+{{- if ge (add $drain 5 $shutdown) $grace -}}
+{{- fail (printf "app.drainTimeoutSeconds (%d) + 5s curl margin + app.shutdownTimeoutSeconds (%d) must be less than app.terminationGracePeriodSeconds (%d), or kubelet SIGKILLs the pod mid-drain." $drain $shutdown $grace) -}}
+{{- end -}}
+{{- end -}}
+
 {{/* OTel collector resource name. */}}
 {{- define "proxy.otelCollectorName" -}}
 {{- printf "%s-otel-collector" .Values.app.name -}}
