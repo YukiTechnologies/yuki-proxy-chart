@@ -5,7 +5,7 @@ app:
   # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
   terminationGracePeriodSeconds: 60
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.430
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
@@ -108,14 +108,14 @@ passthrough:
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
-  # Polls app's own /health/live; flips the proxy Service selector on failure.
+  # Polls app's own /health/passthrough; flips the proxy Service selector on failure.
   watcher:
     enabled: true
     image: curlimages/curl:8.11.0
     pollIntervalSeconds: 5
     failureThreshold: 3
     successThreshold: 3
-    healthPath: /health/live
+    healthPath: /health/passthrough
   # Defaults to app.container.env.PROXY_HOST.
   snowflakeHost: ""
   # Defaults to app.container.env.BIGQUERY_HOST. Takes precedence over Snowflake if both resolve.
