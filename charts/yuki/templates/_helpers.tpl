@@ -21,6 +21,24 @@
 {{- if ge (add $drain 5 $shutdown) $grace -}}
 {{- fail (printf "app.drainTimeoutSeconds (%d) + 5s curl margin + app.shutdownTimeoutSeconds (%d) must be less than app.terminationGracePeriodSeconds (%d), or kubelet SIGKILLs the pod mid-drain." $drain $shutdown $grace) -}}
 {{- end -}}
+{{- if ge (add .Values.app.drainFallbackSeconds $shutdown) $grace -}}
+{{- fail (printf "app.drainFallbackSeconds (%d) + app.shutdownTimeoutSeconds (%d) must be less than app.terminationGracePeriodSeconds (%d), or a failed drain call runs into SIGKILL." (.Values.app.drainFallbackSeconds | int) $shutdown $grace) -}}
+{{- end -}}
+{{- /* The two sidecar workloads have no drain endpoint, so they sleep out the LB window; leave them room to exit. */ -}}
+{{- if .Values.passthrough.enabled -}}
+{{- $pSleep := .Values.passthrough.drainSleepSeconds | int -}}
+{{- $pGrace := .Values.passthrough.terminationGracePeriodSeconds | int -}}
+{{- if ge (add $pSleep 15) $pGrace -}}
+{{- fail (printf "passthrough.drainSleepSeconds (%d) leaves under 15s to shut down before passthrough.terminationGracePeriodSeconds (%d)." $pSleep $pGrace) -}}
+{{- end -}}
+{{- end -}}
+{{- if .Values.mcp.enabled -}}
+{{- $mSleep := .Values.mcp.drainSleepSeconds | int -}}
+{{- $mGrace := .Values.mcp.terminationGracePeriodSeconds | int -}}
+{{- if ge (add $mSleep 15) $mGrace -}}
+{{- fail (printf "mcp.drainSleepSeconds (%d) leaves under 15s to shut down before mcp.terminationGracePeriodSeconds (%d)." $mSleep $mGrace) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/* OTel collector resource name. */}}

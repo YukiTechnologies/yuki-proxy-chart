@@ -8,6 +8,8 @@ app:
   drainTimeoutSeconds: 45
   # Grace left for the app after SIGTERM; drain + shutdown must stay under the grace period.
   shutdownTimeoutSeconds: 10
+  # Fallback hold if the drain call fails, so a broken hook still gives the LB time to stop delivering.
+  drainFallbackSeconds: 20
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
     port: 5162
@@ -100,7 +102,9 @@ passthrough:
   enabled: false
   replicaCount: 2
   # Failover points the proxy Service here, so it inherits the proxy target group's drain window.
-  terminationGracePeriodSeconds: 60
+  terminationGracePeriodSeconds: 75
+  # Must cover the same deregistration_delay the proxy target group uses.
+  drainSleepSeconds: 45
   # Real production traffic can land here during a failover — scale it accordingly.
   hpa:
     enabled: true
@@ -260,7 +264,7 @@ groundcover:
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
   enabled: false
-  terminationGracePeriodSeconds: 60
+  terminationGracePeriodSeconds: 75
   # Keep under terminationGracePeriodSeconds; covers the ALB deregistration_delay above.
   drainSleepSeconds: 45
   container:

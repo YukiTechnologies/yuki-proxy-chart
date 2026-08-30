@@ -173,6 +173,8 @@ spec:
                   - -c
                   - |
                     # Blocks until in-flight requests finish, so SIGTERM lands on an idle pod.
+                    # On failure still hold the pod briefly, then exit non-zero to raise FailedPreStopHook.
                     curl -fsS -X POST -m {{ add .Values.app.drainTimeoutSeconds 5 }} \
-                      http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain
+                      http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain \
+                      || { sleep {{ .Values.app.drainFallbackSeconds }}; exit 1; }
 
