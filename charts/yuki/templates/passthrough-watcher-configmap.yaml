@@ -9,6 +9,7 @@ metadata:
 data:
   # Re-read each loop iteration, so a values change applies live.
   mode: {{ .Values.passthrough.mode | quote }}
+  healthPath: {{ .Values.passthrough.watcher.healthPath | quote }}
   watch.sh: |
     #!/bin/sh
     set -eu -o pipefail
@@ -19,7 +20,7 @@ data:
     API=https://kubernetes.default.svc
     SVC_URL="$API/api/v1/namespaces/$NAMESPACE/services/{{ .Values.app.name }}"
     # Not the Service above — that's the one we swap, checking through it would be circular.
-    HEALTH_URL="http://{{ .Values.app.name }}-direct:{{ .Values.app.service.port }}{{ .Values.passthrough.watcher.healthPath }}"
+    HEALTH_BASE="http://{{ .Values.app.name }}-direct:{{ .Values.app.service.port }}"
     PROXY_LABEL="{{ .Values.app.name }}"
     PASSTHROUGH_LABEL="{{ .Values.app.name }}-passthrough"
     FAILURE_THRESHOLD={{ .Values.passthrough.watcher.failureThreshold }}
@@ -66,10 +67,12 @@ data:
 
     fail_count=0
     success_count=0
-    echo "$(date -Iseconds) bypass-watcher: started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) health_url=$HEALTH_URL"
+    echo "$(date -Iseconds) bypass-watcher: started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) health_base=$HEALTH_BASE"
 
     while true; do
       mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto)
+      health_path=$(cat /etc/bypass/healthPath 2>/dev/null || echo /health/passthrough)
+      HEALTH_URL="$HEALTH_BASE$health_path"
 
       # Re-read the real Service each loop instead of trusting an in-memory value —
       # a stale/wrong belief here is worse than one extra API call per poll.

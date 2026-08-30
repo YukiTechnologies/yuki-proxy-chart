@@ -20,10 +20,6 @@ spec:
       labels:
         app: {{ .Values.app.name }}-passthrough-watcher
         group: {{ .Values.app.group }}
-      annotations:
-        # Force a rollout whenever mode/healthPath/etc. change — watch.sh reads HEALTH_URL
-        # once at process start, so a ConfigMap update alone never reaches a running pod.
-        checksum/config: {{ include (print $.Template.BasePath "/passthrough-watcher-configmap.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.app.name }}-passthrough-watcher
       securityContext:
