@@ -27,7 +27,6 @@ data:
     POLL_INTERVAL={{ .Values.passthrough.watcher.pollIntervalSeconds }}
     HEARTBEAT_FILE=/tmp/heartbeat
 
-    # Every line carries this context so an alert identifies the customer, not just the namespace.
     log() {
       echo "$(date -Iseconds) bypass-watcher: $* company=${COMPANY_NAME:-} account_guid=${ACCOUNT_GUID:-} company_guid=${COMPANY_GUID:-}"
     }
