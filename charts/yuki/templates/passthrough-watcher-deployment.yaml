@@ -34,6 +34,13 @@ spec:
           image: {{ .Values.passthrough.watcher.image }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "/etc/bypass/watch.sh"]
+          env:
+            - name: COMPANY_NAME
+              value: {{ .Values.app.container.env.COMPANY_NAME | default "" | quote }}
+            - name: ACCOUNT_GUID
+              value: {{ .Values.app.container.env.ACCOUNT_GUID | default "" | quote }}
+            - name: COMPANY_GUID
+              value: {{ .Values.app.container.env.COMPANY_GUID | default "" | quote }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
