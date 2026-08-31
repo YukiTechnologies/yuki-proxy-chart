@@ -5,7 +5,7 @@ app:
   # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
   terminationGracePeriodSeconds: 30
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.433
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.434
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
