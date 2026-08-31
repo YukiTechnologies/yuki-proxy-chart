@@ -27,6 +27,20 @@ data:
     POLL_INTERVAL={{ .Values.passthrough.watcher.pollIntervalSeconds }}
     HEARTBEAT_FILE=/tmp/heartbeat
 
+    # JSON body, not "key=value" text — the log pipeline's ExtractGrokPatterns only
+    # supports capturing the whole line, so ParseJSON is what actually parses fields out.
+    json_escape() {
+      printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+    }
+    log() {
+      printf '{"timestamp":"%s","event":"%s","company":"%s","account_guid":"%s","company_guid":"%s"}\n' \
+        "$(date -Iseconds)" "$(json_escape "$*")" "$(json_escape "${COMPANY_NAME:-}")" \
+        "${ACCOUNT_GUID:-}" "${COMPANY_GUID:-}"
+    }
+    log_err() {
+      log "$@" >&2
+    }
+
     k8s_curl() {
       curl -sS --max-time 10 --retry 1 --cacert "$CA_FILE" -H "Authorization: Bearer $(cat $TOKEN_FILE)" "$@"
     }
@@ -58,15 +72,15 @@ data:
         -H "Content-Type: application/strategic-merge-patch+json" \
         -d "{\"spec\":{\"selector\":{\"app\":\"$label\"}}}" \
         "$SVC_URL" >/dev/null; then
-        echo "$(date -Iseconds) bypass-watcher: PATCH to app=$label failed" >&2
+        log_err "PATCH to app=$label failed"
         return 1
       fi
-      echo "$(date -Iseconds) switched proxy Service to app=$label"
+      log "switched proxy Service to app=$label"
     }
 
     fail_count=0
     success_count=0
-    echo "$(date -Iseconds) bypass-watcher: started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) health_url=$HEALTH_URL"
+    log "started, mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto) health_url=$HEALTH_URL"
 
     while true; do
       mode=$(cat /etc/bypass/mode 2>/dev/null || echo auto)
@@ -74,7 +88,7 @@ data:
       # Re-read the real Service each loop instead of trusting an in-memory value —
       # a stale/wrong belief here is worse than one extra API call per poll.
       if ! current=$(read_selector); then
-        echo "$(date -Iseconds) bypass-watcher: could not read Service selector after retries, skipping this cycle"
+        log "could not read Service selector after retries, skipping this cycle"
         touch "$HEARTBEAT_FILE"
         sleep "$POLL_INTERVAL"
         continue
@@ -84,20 +98,20 @@ data:
         # to the proxy first while forcePassthrough is active would defeat the override.
         reset_target="$PROXY_LABEL"
         [ "$mode" = "forcePassthrough" ] && reset_target="$PASSTHROUGH_LABEL"
-        echo "$(date -Iseconds) bypass-watcher: unexpected selector '$current'; resetting to $reset_target"
+        log "unexpected selector '$current'; resetting to $reset_target"
         patch_selector "$reset_target" || true
         current="$reset_target"
       fi
 
       if [ "$mode" = "forcePassthrough" ]; then
         if [ "$current" != "$PASSTHROUGH_LABEL" ]; then
-          echo "$(date -Iseconds) bypass-watcher: mode=forcePassthrough, switching $current -> $PASSTHROUGH_LABEL"
+          log "mode=forcePassthrough, switching $current -> $PASSTHROUGH_LABEL"
           patch_selector "$PASSTHROUGH_LABEL" || true
         fi
         fail_count=0; success_count=0
       elif [ "$mode" = "forceProxy" ]; then
         if [ "$current" != "$PROXY_LABEL" ]; then
-          echo "$(date -Iseconds) bypass-watcher: mode=forceProxy, switching $current -> $PROXY_LABEL"
+          log "mode=forceProxy, switching $current -> $PROXY_LABEL"
           patch_selector "$PROXY_LABEL" || true
         fi
         fail_count=0; success_count=0
@@ -112,15 +126,15 @@ data:
         # Quiet in the steady state (healthy, on proxy, nothing happening) — every
         # poll logs otherwise: any failure, or anything while on the passthrough.
         if [ "$health" = "unhealthy" ] || [ "$current" != "$PROXY_LABEL" ]; then
-          echo "$(date -Iseconds) bypass-watcher: poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
+          log "poll proxy=$health current=$current fail=$fail_count/$FAILURE_THRESHOLD success=$success_count/$SUCCESS_THRESHOLD"
         fi
 
         if [ "$current" = "$PROXY_LABEL" ] && [ "$fail_count" -ge "$FAILURE_THRESHOLD" ]; then
-          echo "$(date -Iseconds) bypass-watcher: failure threshold reached, switching $PROXY_LABEL -> $PASSTHROUGH_LABEL"
+          log "failure threshold reached, switching $PROXY_LABEL -> $PASSTHROUGH_LABEL"
           patch_selector "$PASSTHROUGH_LABEL" || true
           fail_count=0
         elif [ "$current" = "$PASSTHROUGH_LABEL" ] && [ "$success_count" -ge "$SUCCESS_THRESHOLD" ]; then
-          echo "$(date -Iseconds) bypass-watcher: success threshold reached, reverting $PASSTHROUGH_LABEL -> $PROXY_LABEL"
+          log "success threshold reached, reverting $PASSTHROUGH_LABEL -> $PROXY_LABEL"
           patch_selector "$PROXY_LABEL" || true
           success_count=0
         fi

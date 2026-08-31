@@ -11,7 +11,7 @@ app:
   # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
   drainFallbackSeconds: 45
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.433
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
@@ -82,7 +82,13 @@ hpa:
   minReplicas: 5
   maxReplicas: 20
   targetCPUUtilizationPercentage: 90
+  # Off by default — proxy memory is per-pod baseline, so a memory target ratchets to
+  # maxReplicas and never scales in. Target below is ignored unless this is true.
+  memoryScalingEnabled: false
   targetMemoryUtilizationPercentage: 70
+  # Empty = chart default scale-down (600s window, 1 pod/60s). scaleUp is left to the
+  # fast Kubernetes default. Set to override both.
+  behavior: {}
 
 proxyDeploymentType: self_hosted
 
@@ -112,6 +118,7 @@ passthrough:
     maxReplicas: 10
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
+    behavior: {}
   image: nginx:1.27-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
@@ -297,6 +304,7 @@ mcp:
     maxReplicas: 3
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 75
+    behavior: {}
   resources:
     requests:
       cpu: "100m"
