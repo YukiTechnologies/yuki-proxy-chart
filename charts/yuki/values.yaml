@@ -8,8 +8,8 @@ app:
   drainTimeoutSeconds: 45
   # Grace left for the app after SIGTERM; drain + shutdown must stay under the grace period.
   shutdownTimeoutSeconds: 10
-  # Fallback hold if the drain call fails, so a broken hook still gives the LB time to stop delivering.
-  drainFallbackSeconds: 20
+  # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
+  drainFallbackSeconds: 45
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.432
     port: 5162
