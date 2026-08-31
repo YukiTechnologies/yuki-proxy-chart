@@ -12,17 +12,32 @@ spec:
     name: {{ .Values.app.name }}-passthrough
   minReplicas: {{ .Values.passthrough.hpa.minReplicas }}
   maxReplicas: {{ .Values.passthrough.hpa.maxReplicas }}
+  behavior:
+    {{- with .Values.passthrough.hpa.behavior }}
+    {{- toYaml . | nindent 4 }}
+    {{- else }}
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    {{- end }}
   metrics:
+    {{- with .Values.passthrough.hpa.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.passthrough.hpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ . }}
+    {{- end }}
+    {{- with .Values.passthrough.hpa.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.passthrough.hpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ . }}
+    {{- end }}
 {{- end }}

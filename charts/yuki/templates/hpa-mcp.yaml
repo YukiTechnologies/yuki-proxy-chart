@@ -12,17 +12,32 @@ spec:
     name: yuki-mcp
   minReplicas: {{ .Values.mcp.hpa.minReplicas }}
   maxReplicas: {{ .Values.mcp.hpa.maxReplicas }}
+  behavior:
+    {{- with .Values.mcp.hpa.behavior }}
+    {{- toYaml . | nindent 4 }}
+    {{- else }}
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    {{- end }}
   metrics:
+    {{- with .Values.mcp.hpa.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.mcp.hpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ . }}
+    {{- end }}
+    {{- with .Values.mcp.hpa.targetMemoryUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.mcp.hpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ . }}
+    {{- end }}
 {{- end }}
