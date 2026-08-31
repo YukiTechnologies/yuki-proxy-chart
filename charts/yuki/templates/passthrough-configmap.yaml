@@ -23,6 +23,8 @@ data:
   nginx.conf.template: |
     worker_processes auto;
     pid /tmp/nginx.pid;
+    # Bounds the graceful quit so a 600s proxy_read_timeout can't outlive the grace period.
+    worker_shutdown_timeout {{ sub .Values.passthrough.terminationGracePeriodSeconds (add .Values.passthrough.drainSleepSeconds 10) }}s;
     events { worker_connections 1024; }
     http {
       client_max_body_size 0;
