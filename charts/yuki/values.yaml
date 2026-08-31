@@ -2,8 +2,14 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
-  # Must exceed the ALB target group's deregistration_delay, or the LB keeps routing to dead pods.
-  terminationGracePeriodSeconds: 30
+  # Must exceed drainTimeoutSeconds + 5s curl margin + shutdownTimeoutSeconds (see proxy.shutdown.validate).
+  terminationGracePeriodSeconds: 75
+  # preStop waits this long for in-flight requests; must cover the ALB's deregistration_delay.
+  drainTimeoutSeconds: 45
+  # Grace left for the app after SIGTERM; drain + shutdown must stay under the grace period.
+  shutdownTimeoutSeconds: 10
+  # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
+  drainFallbackSeconds: 45
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.434
     port: 5162
@@ -88,6 +94,9 @@ proxyDeploymentType: self_hosted
 
 ingress:
   enabled: false
+  annotations:
+    # Keep below app.terminationGracePeriodSeconds — the pod must outlive the LB's drain window.
+    alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=45
   # Overrides the Ingress backend, e.g. to route to an ALB "actions." target.
   backend:
     serviceName: ""
@@ -98,7 +107,10 @@ ingress:
 passthrough:
   enabled: false
   replicaCount: 2
-  terminationGracePeriodSeconds: 15
+  # Failover points the proxy Service here, so it inherits the proxy target group's drain window.
+  terminationGracePeriodSeconds: 75
+  # Must cover the same deregistration_delay the proxy target group uses.
+  drainSleepSeconds: 45
   # Real production traffic can land here during a failover — scale it accordingly.
   hpa:
     enabled: true
@@ -259,7 +271,9 @@ groundcover:
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
   enabled: false
-  terminationGracePeriodSeconds: 30
+  terminationGracePeriodSeconds: 75
+  # Keep under terminationGracePeriodSeconds; covers the ALB deregistration_delay above.
+  drainSleepSeconds: 45
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
   baseUrl: ""          # public HTTPS URL, e.g. https://<namespace>.yukistaging.com
@@ -281,7 +295,9 @@ mcp:
   ingress:
     enabled: false
     className: alb         # falls back to .Values.ingress.className if empty
-    annotations: {}        # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+    # Own ALB, so it needs its own drain cap — ingress.annotations is not inherited here.
+    annotations:           # ALB annotations (cert-arn, load-balancer-name, external-dns hostname, healthcheck…)
+      alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=45
   hpa:
     enabled: false
     minReplicas: 1

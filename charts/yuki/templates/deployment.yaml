@@ -1,4 +1,5 @@
 {{- include "proxy.observability.validate" . -}}
+{{- include "proxy.shutdown.validate" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -74,6 +75,10 @@ spec:
               value: "{{ .Chart.Version }}"
             - name: IMAGE_VERSION
               value: "{{ tpl .Values.app.container.image . | splitList ":" | last }}"
+            - name: DRAIN_TIMEOUT_SECONDS
+              value: "{{ .Values.app.drainTimeoutSeconds }}"
+            - name: SHUTDOWN_TIMEOUT_SECONDS
+              value: "{{ .Values.app.shutdownTimeoutSeconds }}"
             - name: REDIS_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
@@ -167,8 +172,11 @@ spec:
                   - /bin/sh
                   - -c
                   - |
-                    # Ask the proxy to start draining new traffic before Kubernetes sends SIGTERM
-                    curl -sS -m 1 http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain || true
-                    # Give kubelet and the LB a short window to see readiness go false and remove this pod
-                    sleep 5
+                    # Blocks until in-flight requests finish, so SIGTERM lands on an idle pod.
+                    # A failure still holds the pod, but only for the time the call did not already spend.
+                    start=$(date +%s)
+                    curl -fsS -X POST -m {{ add .Values.app.drainTimeoutSeconds 5 }} \
+                      http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain \
+                      || { left=$(( {{ .Values.app.drainFallbackSeconds }} - ($(date +%s) - start) )); \
+                           [ $left -gt 0 ] && sleep $left; exit 1; }
 
