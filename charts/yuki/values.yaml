@@ -109,7 +109,8 @@ passthrough:
   replicaCount: 2
   # Failover points the proxy Service here, so it inherits the proxy target group's drain window.
   terminationGracePeriodSeconds: 75
-  # Must cover the same deregistration_delay the proxy target group uses.
+  # Only covers the seconds until the LB stops sending new requests; nginx -s quit then
+  # finishes in-flight work with whatever grace is left, so raising this shortens that.
   drainSleepSeconds: 45
   # Real production traffic can land here during a failover — scale it accordingly.
   hpa:
@@ -272,7 +273,8 @@ groundcover:
 mcp:
   enabled: false
   terminationGracePeriodSeconds: 75
-  # Keep under terminationGracePeriodSeconds; covers the ALB deregistration_delay above.
+  # Covers the seconds until the LB stops sending new requests, not the full drain window;
+  # what is left of the grace period is the app's own shutdown budget.
   drainSleepSeconds: 45
   container:
     image: ""          # set per-environment: <ecrArn>/yuki-mcp:<tag>
