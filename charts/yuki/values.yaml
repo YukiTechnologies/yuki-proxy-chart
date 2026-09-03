@@ -11,7 +11,7 @@ app:
   # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
   drainFallbackSeconds: 45
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.436
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.437
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
