@@ -1,3 +1,36 @@
+{{/* DuckDB engine key: reuse the existing one so `helm upgrade` does not rotate it. */}}
+{{- define "proxy.duckdb.apiKey" -}}
+{{- $duckdb := .Values.fabric.engines.duckdb -}}
+{{- $key := $duckdb.apiKey -}}
+{{- if not $key -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace (printf "%s-secret" $duckdb.name) -}}
+{{- $data := dict -}}
+{{- if $existing }}{{ $data = ($existing.data | default dict) }}{{ end -}}
+{{- if hasKey $data "api-key" -}}
+{{- $key = index $data "api-key" | b64dec -}}
+{{- else -}}
+{{- $key = randAlphaNum 32 -}}
+{{- end -}}
+{{- end -}}
+{{- $key -}}
+{{- end -}}
+
+{{/* DuckDB engine config. Hashed by both pod templates, so it must contain no metadata. */}}
+{{- define "proxy.duckdb.config" -}}
+{{- $duckdb := .Values.fabric.engines.duckdb -}}
+{{- $key := include "proxy.duckdb.apiKey" . -}}
+{{- list
+  ".mode trash"
+  "INSTALL httpserver FROM community;"
+  "INSTALL iceberg;"
+  "INSTALL httpfs;"
+  "LOAD httpserver;"
+  (printf "SET threads=%d;" (int64 $duckdb.threads))
+  "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
+  (printf "SELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key))
+  | join "\n" -}}
+{{- end -}}
+
 {{/* Validate fabric.enabled against the engines actually in use. */}}
 {{- define "proxy.fabric.validate" -}}
 {{- $fabric := .Values.fabric | default dict -}}

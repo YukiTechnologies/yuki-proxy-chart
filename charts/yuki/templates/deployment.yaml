@@ -39,7 +39,7 @@ spec:
       annotations:
         {{- if $engineSecret }}
         # env from secretKeyRef is not live, so roll when the engine key changes.
-        checksum/engine-secret: {{ include (print $.Template.BasePath "/duckdb-secret.yaml") . | sha256sum }}
+        checksum/engine-secret: {{ include "proxy.duckdb.apiKey" . | sha256sum }}
         {{- end }}
         {{- if (dig "pod" "annotations" nil .Values.app) }}
         {{ tpl (toYaml .Values.app.pod.annotations) $ | nindent 8 }}
