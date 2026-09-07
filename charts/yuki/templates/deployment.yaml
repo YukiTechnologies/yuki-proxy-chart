@@ -93,7 +93,6 @@ spec:
             {{- if $cfg.enabled }}
             {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
             {{- if and $cfg.deploy (eq $name "duckdb") }}
-            {{- /* Only duckdb derives an endpoint: the chart mints its key. */}}
             - name: {{ $prefix }}_URL
               value: "http://{{ $cfg.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $cfg.port }}"
             - name: {{ $prefix }}_API_KEY

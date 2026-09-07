@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       annotations:
-        # subPath mounts never see Secret updates, so roll pods when .duckdbrc changes.
+        # subPath mounts do not see Secret updates; roll pods when the config changes.
         checksum/config: {{ include (print $.Template.BasePath "/duckdb-secret.yaml") . | sha256sum }}
       labels:
         app: {{ $duckdb.name }}
