@@ -36,13 +36,13 @@ app:
     prometheus:
       enabled: false
 
-# Optional query engines. Per engine, `enabled` = the proxy uses it, `deploy` = this
-# chart installs it. `env` / `envFromSecrets` become QUERY_FEDERATION_<ENGINE>_<KEY>.
+# Optional query engines. An engine is used when this chart deploys it, or when it is
+# given a way to be reached: `env` / `envFromSecrets` become
+# QUERY_FEDERATION_<ENGINE>_<KEY>.
 fabric:
   enabled: false
   engines:
     duckdb:
-      enabled: false
       deploy: false
       name: yuki-duckdb
       image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
@@ -64,8 +64,8 @@ fabric:
       affinity: {}
       tolerations: []
     starrocks:
-      enabled: false
-      # Keep present: Helm reads a missing subchart condition path as enabled.
+      # Must stay a literal boolean: a missing or non-boolean subchart condition path is
+      # ignored, which renders the subchart unconditionally.
       deploy: false
       envFromSecrets: {}
       #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}

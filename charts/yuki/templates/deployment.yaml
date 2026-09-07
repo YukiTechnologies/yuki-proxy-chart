@@ -97,7 +97,7 @@ spec:
               value: "true"
             {{- range $name, $engine := .Values.fabric.engines }}
             {{- $cfg := default dict $engine }}
-            {{- if $cfg.enabled }}
+            {{- if or $cfg.deploy $cfg.env $cfg.envFromSecrets }}
             {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
             {{- if and $cfg.deploy (eq $name "duckdb") }}
             - name: {{ $prefix }}_URL
