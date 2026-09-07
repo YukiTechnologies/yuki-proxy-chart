@@ -18,7 +18,7 @@ spec:
     metadata:
       annotations:
         # subPath mounts do not see Secret updates; roll pods when the config changes.
-        checksum/config: {{ include "proxy.duckdb.config" . | sha256sum }}
+        checksum/config: {{ include "proxy.duckdb.config" (dict "root" . "key" (include "proxy.duckdb.apiKey" .)) | sha256sum }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}

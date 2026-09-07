@@ -15,10 +15,12 @@
 {{- $key -}}
 {{- end -}}
 
-{{/* DuckDB engine config. Hashed by both pod templates, so it must contain no metadata. */}}
+{{/* DuckDB engine config. Hashed by both pod templates, so it must contain no metadata.
+     Takes (dict "root" $ "key" $key): the caller resolves the key once, or a single render
+     would generate a different one per include and the Secret would disagree with itself. */}}
 {{- define "proxy.duckdb.config" -}}
-{{- $duckdb := .Values.fabric.engines.duckdb -}}
-{{- $key := include "proxy.duckdb.apiKey" . -}}
+{{- $duckdb := .root.Values.fabric.engines.duckdb -}}
+{{- $key := .key -}}
 {{- list
   ".mode trash"
   "INSTALL httpserver FROM community;"
