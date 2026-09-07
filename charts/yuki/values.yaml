@@ -48,28 +48,14 @@ fabric:
       deploy: false
     starrocks:
       enabled: false
+      # deploy pulls in kube-starrocks; tune the cluster through that subchart's own values.
+      # Its CRDs ship in crds/, which Helm never upgrades, and ArgoCD re-applies templates
+      # each sync — set starrocks.initPassword.isInstall false after the first install.
       deploy: false
-      # When deployed, FE is at kube-starrocks-fe-service.<namespace>.svc.cluster.local:9030.
-      # The chart does not mint StarRocks' password, so the connection string stays a Secret.
+      # FE is at kube-starrocks-fe-service.<namespace>:9030. The chart does not mint
+      # StarRocks' password, so the connection string stays a Secret.
       envFromSecrets: {}
       #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
-
-# kube-starrocks overrides. Storage is upstream's default emptyDir; set storageSpec.name
-# for FE to keep catalog metadata across restarts. Sizes untuned.
-starrocks:
-  operator:
-    starrocksOperator:
-      # CRDs ship in crds/, which Helm never upgrades. Set false if the cluster has the operator.
-      enabled: true
-  starrocks:
-    starrocksCluster:
-      # ArgoCD re-applies templates each sync; set initPassword.isInstall false after install.
-      enabledBe: true
-      enabledCn: false
-    starrocksFESpec:
-      replicas: 1
-    starrocksBeSpec:
-      replicas: 2
 
 serviceAccount:
   enabled: false
