@@ -16,6 +16,10 @@ spec:
   template:
     metadata:
       namespace: {{ .Release.Namespace }}
+      annotations:
+        # .duckdbrc is mounted with subPath, which never picks up Secret updates — without
+        # this a changed threads/port/apiKey would sit unread until a pod happened to restart.
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
