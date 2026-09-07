@@ -94,6 +94,15 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.duckdb.app.name }}-secret
                   key: api-key
+            {{- with ((.Values.fabric.starrocks).connectionStringSecret) }}
+            {{- if .name }}
+            - name: QUERY_FEDERATION_STARROCKS_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key | default "connection-string" }}
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT

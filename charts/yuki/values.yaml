@@ -41,6 +41,14 @@ app:
 # StarRocks pool hangs off this same flag rather than adding a second one.
 fabric:
   enabled: false
+  # StarRocks is NOT deployed by this chart: it is a stateful FE+BE cluster and upstream
+  # already ships one (starrocks/kube-starrocks). This only points the proxy at an existing
+  # cluster. Its connection string carries a password, so it comes from a Secret rather than
+  # from values — leave the name empty and the StarRocks adapter simply answers nothing.
+  starrocks:
+    connectionStringSecret:
+      name: ""
+      key: connection-string
 
 serviceAccount:
   enabled: false
