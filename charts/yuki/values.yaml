@@ -39,16 +39,27 @@ app:
 # Fabric / query federation. One switch for the whole stack: the engine worker
 # pool subcharts and the proxy's own QUERY_FEDERATION_ENABLED gate. A future
 # StarRocks pool hangs off this same flag rather than adding a second one.
+# Fabric / query federation. `enabled` is the one master switch: it gates the proxy's
+# QUERY_FEDERATION_ENABLED and every engine pool this chart deploys.
+#
+# Engines are independent — run one or several at once. Proxy-side adapters are keyed by
+# engine name, so several are live in the same process and the Routing Brain picks per
+# query; enabling a second engine never disturbs the first.
+#
+# To add an engine:
+#   - Running elsewhere (e.g. StarRocks via upstream kube-starrocks) — give the proxy its
+#     config as QUERY_FEDERATION_<ENGINE>_<SETTING> under app.container.env, or
+#     .envFromSecrets when it carries a credential. No template change needed:
+#       app:
+#         container:
+#           envFromSecrets:
+#             QUERY_FEDERATION_STARROCKS_CONNECTION_STRING:
+#               name: starrocks-creds
+#               key: connection-string
+#   - Deployed by this chart (like the DuckDB pool) — add a subchart with
+#     `condition: fabric.enabled` and its own `app.enabled`, mirroring charts/duckdb.
 fabric:
   enabled: false
-  # StarRocks is NOT deployed by this chart: it is a stateful FE+BE cluster and upstream
-  # already ships one (starrocks/kube-starrocks). This only points the proxy at an existing
-  # cluster. Its connection string carries a password, so it comes from a Secret rather than
-  # from values — leave the name empty and the StarRocks adapter simply answers nothing.
-  starrocks:
-    connectionStringSecret:
-      name: ""
-      key: connection-string
 
 serviceAccount:
   enabled: false

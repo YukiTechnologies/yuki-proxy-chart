@@ -1,3 +1,4 @@
+{{- if .Values.app.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -21,3 +22,4 @@ spec:
       port: 9090
       targetPort: 9090
       {{- end }}
+{{- end }}
