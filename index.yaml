@@ -105,6 +105,29 @@ entries:
     version: 0.0.170-7af2b0d
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-09-07T10:35:15.78765092Z"
+    dependencies:
+    - condition: externalSecrets.operator.enabled
+      name: external-secrets
+      repository: https://charts.external-secrets.io
+      version: 0.19.1
+    - condition: groundcover.enabled
+      name: groundcover
+      repository: https://helm.groundcover.com
+      version: 1.11.997
+    - alias: duckdb
+      condition: fabric.engines.duckdb.enabled
+      name: yuki-duckdb
+      repository: file://../duckdb
+      version: 0.1.0
+    description: A Helm chart for Yuki Proxy Deployment
+    digest: 396f1bf03e4e119f1c5ad425917abc84e845469e218ae169b9cec60e7308da15
+    name: proxy
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/proxy-0.0.170-650bfd5/proxy-0.0.170-650bfd5.tgz
+    version: 0.0.170-650bfd5
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-09-07T10:19:23.389188755Z"
     dependencies:
     - condition: externalSecrets.operator.enabled
@@ -3187,4 +3210,4 @@ entries:
     urls:
     - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/yuki-duckdb-0.1.0/yuki-duckdb-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-07T10:19:23.524026985Z"
+generated: "2026-09-07T10:35:15.788446601Z"
