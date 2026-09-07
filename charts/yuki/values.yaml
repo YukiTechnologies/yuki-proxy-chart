@@ -49,7 +49,8 @@ fabric:
       enabled: false
       deploy: true
     starrocks:
-      # Pointed at, not deployed: upstream ships starrocks/kube-starrocks.
+      # Pointed at, not deployed: this chart is one release per customer namespace, so a
+      # stateful engine belongs in the cluster once. Provision via starrocks/kube-starrocks.
       enabled: false
       envFromSecrets: {}
       #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
