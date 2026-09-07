@@ -36,12 +36,9 @@ app:
     prometheus:
       enabled: false
 
-# Fabric / query federation. `enabled` is the master switch, `engines` selects which run.
-# Per engine: `enabled` = the proxy talks to it, `deploy` = this chart provisions it.
-# The render fails if enabled with nothing selected, if an engine is selected while
-# disabled, if deploy is set without enabled, or on a name the proxy has no adapter for.
-# `env` / `envFromSecrets` entries become QUERY_FEDERATION_<ENGINE>_<KEY>, so an engine
-# running elsewhere needs no template change.
+# Fabric / query federation. `enabled` is the master switch; per engine, `enabled` means
+# the proxy talks to it and `deploy` means this chart provisions it. `env` /
+# `envFromSecrets` entries become QUERY_FEDERATION_<ENGINE>_<KEY>.
 # Keep every engine key present — Helm reads a missing subchart condition path as enabled.
 fabric:
   enabled: false
@@ -51,30 +48,22 @@ fabric:
       deploy: false
     starrocks:
       enabled: false
-      # One instance per proxy release. Cheap enough while this is one or two customers,
-      # and it keeps the self-hosted and fully-hosted charts identical. Its connection
-      # string still comes from envFromSecrets: the chart provisions the cluster but does
-      # not mint its password, so there is nothing for it to derive. When deployed the FE
-      # endpoint is kube-starrocks-fe-service.<namespace>.svc.cluster.local:9030.
       deploy: false
+      # When deployed, FE is at kube-starrocks-fe-service.<namespace>.svc.cluster.local:9030.
+      # The chart does not mint StarRocks' password, so the connection string stays a Secret.
       envFromSecrets: {}
       #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
 
-# kube-starrocks overrides, rendered only when fabric.engines.starrocks.deploy.
-# Upstream sizes for StarRocks owning its data; Fabric queries external Iceberg, so BE
-# disk is spill/cache. storageSpec.name is unset upstream, which means emptyDir — set it
-# for FE if losing catalog metadata on pod restart is not acceptable.
-# Sizes are starting points; load-test before trusting them.
+# kube-starrocks overrides. Storage is upstream's default emptyDir; set storageSpec.name
+# for FE to keep catalog metadata across restarts. Sizes untuned.
 starrocks:
   operator:
     starrocksOperator:
-      # Cluster-scoped CRDs ship in the subchart's crds/ dir, which Helm installs but never
-      # upgrades. Turn this off where the cluster already runs the operator.
+      # CRDs ship in crds/, which Helm never upgrades. Set false if the cluster has the operator.
       enabled: true
   starrocks:
     starrocksCluster:
-      # ArgoCD renders with `helm template | kubectl apply`, so the init-password Job would
-      # re-run on every sync. Set initPassword.isInstall false after the first install.
+      # ArgoCD re-applies templates each sync; set initPassword.isInstall false after install.
       enabledBe: true
       enabledCn: false
     starrocksFESpec:
