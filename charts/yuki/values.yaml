@@ -36,6 +36,40 @@ app:
     prometheus:
       enabled: false
 
+# Optional query engines. Per engine, `enabled` = the proxy uses it, `deploy` = this
+# chart installs it. `env` / `envFromSecrets` become QUERY_FEDERATION_<ENGINE>_<KEY>.
+fabric:
+  enabled: false
+  engines:
+    duckdb:
+      enabled: false
+      deploy: false
+      name: yuki-duckdb
+      image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
+      port: 80
+      replicaCount: 3
+      # Keep in step with resources.limits.cpu.
+      threads: 2
+      # Empty reuses the key already in the Secret, or mints one.
+      apiKey: ""
+      serviceAccountName: yuki-duckdb-sa
+      roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: "2"
+      affinity: {}
+      tolerations: []
+    starrocks:
+      enabled: false
+      # Keep present: Helm reads a missing subchart condition path as enabled.
+      deploy: false
+      envFromSecrets: {}
+      #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
+
 serviceAccount:
   enabled: false
 

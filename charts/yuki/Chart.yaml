@@ -15,3 +15,9 @@ dependencies:
     version: "1.11.997"
     repository: https://helm.groundcover.com
     condition: groundcover.enabled
+  # Aliased: a hyphenated dependency name is not addressable in values.
+  - name: kube-starrocks
+    version: "1.11.7"
+    repository: https://starrocks.github.io/starrocks-kubernetes-operator
+    alias: starrocks
+    condition: fabric.engines.starrocks.deploy

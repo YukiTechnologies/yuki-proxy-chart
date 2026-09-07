@@ -1,3 +1,30 @@
+{{/* Validate fabric.enabled against the selected engines. */}}
+{{- define "proxy.fabric.validate" -}}
+{{- $fabric := .Values.fabric | default dict -}}
+{{- $engines := $fabric.engines | default dict -}}
+{{- $allowed := list "duckdb" "starrocks" -}}
+{{- $selected := list -}}
+{{- range $name, $cfg := $engines -}}
+{{- if not (has $name $allowed) -}}
+{{- fail (printf "fabric.engines: unknown engine %q, expected one of: %s" $name (join ", " $allowed)) -}}
+{{- end -}}
+{{- if (default dict $cfg).enabled -}}
+{{- $selected = append $selected $name -}}
+{{- else if (default dict $cfg).deploy -}}
+{{- fail (printf "fabric.engines.%s.deploy is true but enabled is false" $name) -}}
+{{- end -}}
+{{- end -}}
+{{- if $fabric.enabled -}}
+{{- if not $selected -}}
+{{- fail (printf "fabric.enabled is true but no engine is selected, expected one of: %s" (join ", " $allowed)) -}}
+{{- end -}}
+{{- else -}}
+{{- if $selected -}}
+{{- fail (printf "fabric.enabled is false but engines are selected: %s" (join ", " $selected)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Validate the observability backend / subchart-toggle combination. */}}
 {{- define "proxy.observability.validate" -}}
 {{- $backend := .Values.observability.backend -}}

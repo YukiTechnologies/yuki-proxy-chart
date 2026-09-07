@@ -1,0 +1,20 @@
+{{- if and .Values.fabric.enabled .Values.fabric.engines.duckdb.deploy }}
+{{- $duckdb := .Values.fabric.engines.duckdb }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $duckdb.name }}-svc
+  labels:
+    app.kubernetes.io/name: {{ $duckdb.name }}
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app: {{ $duckdb.name }}
+    group: {{ .Values.app.group }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $duckdb.name }}
+  ports:
+    - name: duckdb
+      port: {{ $duckdb.port }}
+      targetPort: duckdb-http
+{{- end }}

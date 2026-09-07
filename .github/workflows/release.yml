@@ -31,6 +31,7 @@ jobs:
         run: |
           helm repo add external-secrets https://charts.external-secrets.io
           helm repo add groundcover https://helm.groundcover.com
+          helm repo add starrocks https://starrocks.github.io/starrocks-kubernetes-operator
           helm repo update
 
       - name: Determine version strategy

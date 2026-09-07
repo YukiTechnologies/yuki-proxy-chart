@@ -1,5 +1,6 @@
 {{- include "proxy.observability.validate" . -}}
 {{- include "proxy.shutdown.validate" . -}}
+{{- include "proxy.fabric.validate" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -84,6 +85,36 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
+            {{- if .Values.fabric.enabled }}
+            - name: QUERY_FEDERATION_ENABLED
+              value: "true"
+            {{- range $name, $engine := .Values.fabric.engines }}
+            {{- $cfg := default dict $engine }}
+            {{- if $cfg.enabled }}
+            {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
+            {{- if and $cfg.deploy (eq $name "duckdb") }}
+            - name: {{ $prefix }}_URL
+              value: "http://{{ $cfg.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $cfg.port }}"
+            - name: {{ $prefix }}_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $cfg.name }}-secret
+                  key: api-key
+            {{- end }}
+            {{- range $key, $value := ($cfg.env | default dict) }}
+            - name: {{ $prefix }}_{{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $ref := ($cfg.envFromSecrets | default dict) }}
+            - name: {{ $prefix }}_{{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required (printf "fabric.engines.%s.envFromSecrets.%s.name is required" $name $key) $ref.name }}
+                  key: {{ required (printf "fabric.engines.%s.envFromSecrets.%s.key is required" $name $key) $ref.key }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://{{ include "proxy.otelCollectorName" . }}:{{ .Values.observability.otlp.httpPort }}"
