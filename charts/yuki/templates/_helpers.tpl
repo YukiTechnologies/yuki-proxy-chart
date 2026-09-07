@@ -2,8 +2,7 @@
 {{- define "proxy.fabric.validate" -}}
 {{- $fabric := .Values.fabric | default dict -}}
 {{- $engines := $fabric.engines | default dict -}}
-{{- /* The allowed set is the adapters registered in Program.AddQueryFederationServices;
-       a name with no adapter would configure an engine the proxy cannot reach. */ -}}
+{{- /* Must match the adapters registered in Program.AddQueryFederationServices. */ -}}
 {{- $allowed := list "duckdb" "starrocks" -}}
 {{- $selected := list -}}
 {{- range $name, $cfg := $engines -}}

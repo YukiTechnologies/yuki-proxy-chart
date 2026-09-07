@@ -1,18 +1,11 @@
 app:
-  # Run this pool. Lets an operator pick engines independently while fabric.enabled stays
-  # the single master switch — StarRocks-only means fabric.enabled with this off.
-  enabled: true
   name: 'yuki-duckdb'
   group: default-app-group
-  # Scaled out, not up: DuckDB throughput degrades non-linearly under heavy
-  # single-node concurrency, so add pods rather than cores per pod.
+  # Scale out, not up: throughput degrades non-linearly under single-node concurrency.
   replicaCount: 3
-  # Worker threads per pod. Must track resources.limits.cpu — DuckDB sizes its
-  # thread pool from the node's core count, not from the cgroup limit.
+  # Must track resources.limits.cpu — DuckDB sizes its thread pool from node cores.
   threads: 2
-  # httpserver bearer token, shared by every pod in the pool. Leave empty and
-  # the chart reuses the value already in the Secret, or mints one on first
-  # install; the proxy reads it from that same Secret, so nobody has to know it.
+  # Empty reuses the key already in the Secret, or mints one. The proxy reads it from there.
   apiKey: ""
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1

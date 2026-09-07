@@ -93,9 +93,7 @@ spec:
             {{- if $cfg.enabled }}
             {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
             {{- if $cfg.deploy }}
-            {{- /* ponytail: duckdb is the only engine this chart deploys, so its address is
-                   derived here rather than through a generic pool-address abstraction. A
-                   second deployed engine adds its own branch alongside its subchart. */}}
+            {{- /* ponytail: duckdb is the only pool this chart deploys; a second adds its own branch. */}}
             - name: {{ $prefix }}_URL
               value: "http://{{ $.Values.duckdb.app.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.duckdb.app.service.port }}"
             - name: {{ $prefix }}_API_KEY

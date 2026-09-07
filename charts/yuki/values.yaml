@@ -36,40 +36,23 @@ app:
     prometheus:
       enabled: false
 
-# Fabric / query federation.
-#
-# `enabled` is the master switch. When it is true, `engines` must select at least one
-# engine; when it is false, none may be selected. Both are enforced at render time, so
-# federation can never come up with nothing to divert to, and an engine can never be
-# brought up while federation is off.
-#
-# Engine names are checked against the adapters the proxy actually implements — a typo
-# fails the render instead of quietly configuring an engine nothing can talk to. Several
-# engines can run at once: the proxy keys its adapters by name and the Routing Brain
-# picks per query.
-#
-# Per engine:
-#   deploy          — this chart runs the pool, and the proxy's address/credential env is
-#                     derived from it. Only duckdb has a pool here (charts/duckdb).
-#   env             — plain settings, rendered as QUERY_FEDERATION_<ENGINE>_<KEY>
-#   envFromSecrets  — the same, sourced from a Secret. Use this for credentials.
-#
-# Adding an engine that runs elsewhere needs no template change — just a block here.
+# Fabric / query federation. `enabled` is the master switch, `engines` selects which run.
+# The render fails if enabled with nothing selected, if an engine is selected while
+# disabled, or on a name the proxy has no adapter for.
+# Per engine: `deploy` means this chart runs the pool; `env` / `envFromSecrets` entries
+# become QUERY_FEDERATION_<ENGINE>_<KEY>, so a pointed-at engine needs no template change.
+# Keep every engine key present — Helm reads a missing subchart condition path as enabled.
 fabric:
   enabled: false
   engines:
     duckdb:
       enabled: false
-      # This chart deploys the pool; size it in the `duckdb` block below.
       deploy: true
     starrocks:
+      # Pointed at, not deployed: upstream ships starrocks/kube-starrocks.
       enabled: false
-      # StarRocks is a stateful FE+BE cluster with an official upstream chart
-      # (starrocks/kube-starrocks), so this chart points at one rather than running it.
       envFromSecrets: {}
-      #  CONNECTION_STRING:
-      #    name: starrocks-creds
-      #    key: connection-string
+      #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
 
 serviceAccount:
   enabled: false
