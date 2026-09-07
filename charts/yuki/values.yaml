@@ -36,30 +36,40 @@ app:
     prometheus:
       enabled: false
 
-# Fabric / query federation. One switch for the whole stack: the engine worker
-# pool subcharts and the proxy's own QUERY_FEDERATION_ENABLED gate. A future
-# StarRocks pool hangs off this same flag rather than adding a second one.
-# Fabric / query federation. `enabled` is the one master switch: it gates the proxy's
-# QUERY_FEDERATION_ENABLED and every engine pool this chart deploys.
+# Fabric / query federation.
 #
-# Engines are independent — run one or several at once. Proxy-side adapters are keyed by
-# engine name, so several are live in the same process and the Routing Brain picks per
-# query; enabling a second engine never disturbs the first.
+# `enabled` is the master switch. When it is true, `engines` must select at least one
+# engine; when it is false, none may be selected. Both are enforced at render time, so
+# federation can never come up with nothing to divert to, and an engine can never be
+# brought up while federation is off.
 #
-# To add an engine:
-#   - Running elsewhere (e.g. StarRocks via upstream kube-starrocks) — give the proxy its
-#     config as QUERY_FEDERATION_<ENGINE>_<SETTING> under app.container.env, or
-#     .envFromSecrets when it carries a credential. No template change needed:
-#       app:
-#         container:
-#           envFromSecrets:
-#             QUERY_FEDERATION_STARROCKS_CONNECTION_STRING:
-#               name: starrocks-creds
-#               key: connection-string
-#   - Deployed by this chart (like the DuckDB pool) — add a subchart with
-#     `condition: fabric.enabled` and its own `app.enabled`, mirroring charts/duckdb.
+# Engine names are checked against the adapters the proxy actually implements — a typo
+# fails the render instead of quietly configuring an engine nothing can talk to. Several
+# engines can run at once: the proxy keys its adapters by name and the Routing Brain
+# picks per query.
+#
+# Per engine:
+#   deploy          — this chart runs the pool, and the proxy's address/credential env is
+#                     derived from it. Only duckdb has a pool here (charts/duckdb).
+#   env             — plain settings, rendered as QUERY_FEDERATION_<ENGINE>_<KEY>
+#   envFromSecrets  — the same, sourced from a Secret. Use this for credentials.
+#
+# Adding an engine that runs elsewhere needs no template change — just a block here.
 fabric:
   enabled: false
+  engines:
+    duckdb:
+      enabled: false
+      # This chart deploys the pool; size it in the `duckdb` block below.
+      deploy: true
+    starrocks:
+      enabled: false
+      # StarRocks is a stateful FE+BE cluster with an official upstream chart
+      # (starrocks/kube-starrocks), so this chart points at one rather than running it.
+      envFromSecrets: {}
+      #  CONNECTION_STRING:
+      #    name: starrocks-creds
+      #    key: connection-string
 
 serviceAccount:
   enabled: false

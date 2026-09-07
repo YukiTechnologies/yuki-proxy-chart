@@ -1,5 +1,6 @@
 {{- include "proxy.observability.validate" . -}}
 {{- include "proxy.shutdown.validate" . -}}
+{{- include "proxy.fabric.validate" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,17 +88,34 @@ spec:
             {{- if .Values.fabric.enabled }}
             - name: QUERY_FEDERATION_ENABLED
               value: "true"
-            {{- /* Only the pools this chart deploys are derived here. Engines running
-                   elsewhere are configured through app.container.env/.envFromSecrets —
-                   see the `fabric` block in values.yaml. */}}
-            {{- if ((.Values.duckdb).app).enabled }}
-            - name: QUERY_FEDERATION_DUCKDB_URL
-              value: "http://{{ .Values.duckdb.app.name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.duckdb.app.service.port }}"
-            - name: QUERY_FEDERATION_DUCKDB_API_KEY
+            {{- range $name, $engine := .Values.fabric.engines }}
+            {{- $cfg := default dict $engine }}
+            {{- if $cfg.enabled }}
+            {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
+            {{- if $cfg.deploy }}
+            {{- /* ponytail: duckdb is the only engine this chart deploys, so its address is
+                   derived here rather than through a generic pool-address abstraction. A
+                   second deployed engine adds its own branch alongside its subchart. */}}
+            - name: {{ $prefix }}_URL
+              value: "http://{{ $.Values.duckdb.app.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.duckdb.app.service.port }}"
+            - name: {{ $prefix }}_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.duckdb.app.name }}-secret
+                  name: {{ $.Values.duckdb.app.name }}-secret
                   key: api-key
+            {{- end }}
+            {{- range $key, $value := ($cfg.env | default dict) }}
+            - name: {{ $prefix }}_{{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- range $key, $ref := ($cfg.envFromSecrets | default dict) }}
+            - name: {{ $prefix }}_{{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required (printf "fabric.engines.%s.envFromSecrets.%s.name is required" $name $key) $ref.name }}
+                  key: {{ required (printf "fabric.engines.%s.envFromSecrets.%s.key is required" $name $key) $ref.key }}
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}

@@ -1,3 +1,30 @@
+{{/* Validate the fabric master switch against the selected engine list. */}}
+{{- define "proxy.fabric.validate" -}}
+{{- $fabric := .Values.fabric | default dict -}}
+{{- $engines := $fabric.engines | default dict -}}
+{{- /* The allowed set is the adapters registered in Program.AddQueryFederationServices;
+       a name with no adapter would configure an engine the proxy cannot reach. */ -}}
+{{- $allowed := list "duckdb" "starrocks" -}}
+{{- $selected := list -}}
+{{- range $name, $cfg := $engines -}}
+{{- if not (has $name $allowed) -}}
+{{- fail (printf "fabric.engines has unknown engine %q — the proxy implements adapters for: %s" $name (join ", " $allowed)) -}}
+{{- end -}}
+{{- if (default dict $cfg).enabled -}}
+{{- $selected = append $selected $name -}}
+{{- end -}}
+{{- end -}}
+{{- if $fabric.enabled -}}
+{{- if not $selected -}}
+{{- fail (printf "fabric.enabled is true but no engine is selected — set enabled: true on at least one of: %s" (join ", " $allowed)) -}}
+{{- end -}}
+{{- else -}}
+{{- if $selected -}}
+{{- fail (printf "fabric.enabled is false but these engines are still selected: %s — disable them, or turn fabric on" (join ", " $selected)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Validate the observability backend / subchart-toggle combination. */}}
 {{- define "proxy.observability.validate" -}}
 {{- $backend := .Values.observability.backend -}}
