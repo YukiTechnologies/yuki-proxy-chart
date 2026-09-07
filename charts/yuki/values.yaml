@@ -36,6 +36,12 @@ app:
     prometheus:
       enabled: false
 
+# Fabric / query federation. One switch for the whole stack: the engine worker
+# pool subcharts and the proxy's own QUERY_FEDERATION_ENABLED gate. A future
+# StarRocks pool hangs off this same flag rather than adding a second one.
+fabric:
+  enabled: false
+
 serviceAccount:
   enabled: false
 

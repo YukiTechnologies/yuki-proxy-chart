@@ -84,6 +84,17 @@ spec:
                 secretKeyRef:
                   name: redis-encryption-key
                   key: password
+            {{- if .Values.fabric.enabled }}
+            - name: QUERY_FEDERATION_ENABLED
+              value: "true"
+            - name: QUERY_FEDERATION_DUCKDB_URL
+              value: "http://{{ .Values.duckdb.app.name }}-svc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.duckdb.app.service.port }}"
+            - name: QUERY_FEDERATION_DUCKDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.duckdb.app.name }}-secret
+                  key: api-key
+            {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://{{ include "proxy.otelCollectorName" . }}:{{ .Values.observability.otlp.httpPort }}"

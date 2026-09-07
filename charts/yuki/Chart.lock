@@ -5,5 +5,8 @@ dependencies:
 - name: groundcover
   repository: https://helm.groundcover.com
   version: 1.11.997
-digest: sha256:5c7e32fdc6bad1c1dbffb65ae54eb227ececcc4ae2d1835c8e917a51c6e0d7c2
-generated: "2026-06-15T15:57:36.97033+05:30"
+- name: yuki-duckdb
+  repository: file://../duckdb
+  version: 0.1.0
+digest: sha256:b8b5539659a581bc07981d00197d3e455e7afaf2b2f002ec5da78689e8d13601
+generated: "2026-09-07T12:00:30.042085+03:00"

@@ -1,9 +1,8 @@
-{{- if .Values.app.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.app.name }}
-  namespace: yuki-duckdb
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ .Values.app.name }}
     app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
@@ -16,7 +15,7 @@ spec:
       app: {{ .Values.app.name }}
   template:
     metadata:
-      namespace: yuki-duckdb
+      namespace: {{ .Release.Namespace }}
       labels:
         app: {{ .Values.app.name }}
         group: {{ .Values.app.group }}
@@ -30,6 +29,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: duckdbrc
+          secret:
+            secretName: {{ .Values.app.name }}-secret
+            items:
+              - key: .duckdbrc
+                path: .duckdbrc
       containers:
         - name: {{ .Values.app.name }}
           image: {{ .Values.app.container.image }}
@@ -41,6 +47,11 @@ spec:
           ports:
             - containerPort: {{ .Values.app.container.port }}
               name: duckdb-http
+          volumeMounts:
+            - name: duckdbrc
+              mountPath: /home/duckdb/.duckdbrc
+              subPath: .duckdbrc
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /ping
@@ -53,4 +64,3 @@ spec:
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
-{{- end }}
