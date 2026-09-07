@@ -11,6 +11,8 @@
 {{- end -}}
 {{- if (default dict $cfg).enabled -}}
 {{- $selected = append $selected $name -}}
+{{- else if (default dict $cfg).deploy -}}
+{{- fail (printf "fabric.engines.%s.deploy is true but enabled is false — the chart would provision an engine the proxy never queries" $name) -}}
 {{- end -}}
 {{- end -}}
 {{- if $fabric.enabled -}}

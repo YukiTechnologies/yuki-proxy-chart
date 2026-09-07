@@ -8,5 +8,8 @@ dependencies:
 - name: yuki-duckdb
   repository: file://../duckdb
   version: 0.1.0
-digest: sha256:3d377098e763ddb26cf22b454034763850e1cf731d2ae3ba62047f3a6935af03
-generated: "2026-09-07T13:11:09.198332+03:00"
+- name: kube-starrocks
+  repository: https://starrocks.github.io/starrocks-kubernetes-operator
+  version: 1.11.7
+digest: sha256:fd0f22988aa1fe6302f4b5b47c630bccfe0ea0fe1b31b387ed77c26b6e294b9c
+generated: "2026-09-07T14:14:24.652351+03:00"

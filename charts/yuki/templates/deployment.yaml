@@ -92,8 +92,10 @@ spec:
             {{- $cfg := default dict $engine }}
             {{- if $cfg.enabled }}
             {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
-            {{- if $cfg.deploy }}
-            {{- /* ponytail: duckdb is the only pool this chart deploys; a second adds its own branch. */}}
+            {{- if and $cfg.deploy (eq $name "duckdb") }}
+            {{- /* Only duckdb's endpoint is derived: the chart mints its key, so it can. It does
+                   not mint StarRocks' password, which is why that one comes from envFromSecrets
+                   even when deployed. */}}
             - name: {{ $prefix }}_URL
               value: "http://{{ $.Values.duckdb.app.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.duckdb.app.service.port }}"
             - name: {{ $prefix }}_API_KEY

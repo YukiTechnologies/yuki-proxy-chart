@@ -20,4 +20,11 @@ dependencies:
     version: "0.1.0"
     repository: "file://../duckdb"
     alias: duckdb
-    condition: fabric.engines.duckdb.enabled
+    condition: fabric.engines.duckdb.deploy
+  # Aliased so its values sit at .Values.starrocks; nests as .Values.starrocks.starrocks
+  # for the cluster CR and .Values.starrocks.operator for the operator, per upstream.
+  - name: kube-starrocks
+    version: "1.11.7"
+    repository: https://starrocks.github.io/starrocks-kubernetes-operator
+    alias: starrocks
+    condition: fabric.engines.starrocks.deploy
