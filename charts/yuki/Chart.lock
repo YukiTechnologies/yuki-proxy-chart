@@ -5,11 +5,8 @@ dependencies:
 - name: groundcover
   repository: https://helm.groundcover.com
   version: 1.11.997
-- name: yuki-duckdb
-  repository: file://../duckdb
-  version: 0.1.0
 - name: kube-starrocks
   repository: https://starrocks.github.io/starrocks-kubernetes-operator
   version: 1.11.7
-digest: sha256:fd0f22988aa1fe6302f4b5b47c630bccfe0ea0fe1b31b387ed77c26b6e294b9c
-generated: "2026-09-07T14:14:24.652351+03:00"
+digest: sha256:10c41a9b4c8750c1c66cb75e80eea58a45e95190436b0e6b3a9a7af80e7dd9b4
+generated: "2026-09-07T14:52:43.984183+03:00"

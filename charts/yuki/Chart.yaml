@@ -16,11 +16,6 @@ dependencies:
     repository: https://helm.groundcover.com
     condition: groundcover.enabled
   # Aliased so its values sit at .Values.duckdb, not an unaddressable hyphenated key.
-  - name: yuki-duckdb
-    version: "0.1.0"
-    repository: "file://../duckdb"
-    alias: duckdb
-    condition: fabric.engines.duckdb.deploy
   - name: kube-starrocks
     version: "1.11.7"
     repository: https://starrocks.github.io/starrocks-kubernetes-operator

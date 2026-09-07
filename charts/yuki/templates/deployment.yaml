@@ -95,11 +95,11 @@ spec:
             {{- if and $cfg.deploy (eq $name "duckdb") }}
             {{- /* Only duckdb derives an endpoint: the chart mints its key. */}}
             - name: {{ $prefix }}_URL
-              value: "http://{{ $.Values.duckdb.app.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $.Values.duckdb.app.service.port }}"
+              value: "http://{{ $cfg.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $cfg.port }}"
             - name: {{ $prefix }}_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ $.Values.duckdb.app.name }}-secret
+                  name: {{ $cfg.name }}-secret
                   key: api-key
             {{- end }}
             {{- range $key, $value := ($cfg.env | default dict) }}

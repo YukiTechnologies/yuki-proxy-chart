@@ -39,18 +39,38 @@ app:
 # Fabric / query federation. `enabled` is the master switch; per engine, `enabled` means
 # the proxy talks to it and `deploy` means this chart provisions it. `env` /
 # `envFromSecrets` entries become QUERY_FEDERATION_<ENGINE>_<KEY>.
-# Keep every engine key present — Helm reads a missing subchart condition path as enabled.
 fabric:
   enabled: false
   engines:
     duckdb:
       enabled: false
       deploy: false
+      name: yuki-duckdb
+      image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
+      port: 80
+      # Scale out, not up: throughput degrades non-linearly under single-node concurrency.
+      replicaCount: 3
+      # Must track resources.limits.cpu — DuckDB sizes its thread pool from node cores.
+      threads: 2
+      # Empty reuses the key already in the Secret, or mints one.
+      apiKey: ""
+      serviceAccountName: yuki-duckdb-sa
+      roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 500m
+        limits:
+          memory: 2Gi
+          cpu: "2"
+      affinity: {}
+      tolerations: []
     starrocks:
       enabled: false
       # deploy pulls in kube-starrocks; tune the cluster through that subchart's own values.
       # Its CRDs ship in crds/, which Helm never upgrades, and ArgoCD re-applies templates
       # each sync — set starrocks.initPassword.isInstall false after the first install.
+      # Keep this key present: Helm reads a missing subchart condition path as enabled.
       deploy: false
       # FE is at kube-starrocks-fe-service.<namespace>:9030. The chart does not mint
       # StarRocks' password, so the connection string stays a Secret.
