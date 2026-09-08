@@ -1,3 +1,63 @@
+{{/* DuckDB engine key: reuse the existing one so `helm upgrade` does not rotate it. */}}
+{{- define "proxy.duckdb.apiKey" -}}
+{{- $duckdb := .Values.fabric.engines.duckdb -}}
+{{- $key := $duckdb.apiKey -}}
+{{- if not $key -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace (printf "%s-secret" $duckdb.name) -}}
+{{- $data := dict -}}
+{{- if $existing }}{{ $data = ($existing.data | default dict) }}{{ end -}}
+{{- if hasKey $data "api-key" -}}
+{{- $key = index $data "api-key" | b64dec -}}
+{{- else -}}
+{{- $key = randAlphaNum 32 -}}
+{{- end -}}
+{{- end -}}
+{{- $key -}}
+{{- end -}}
+
+{{/* DuckDB engine config. Hashed by both pod templates, so it must contain no metadata.
+     Takes (dict "root" $ "key" $key): the caller resolves the key once, or a single render
+     would generate a different one per include and the Secret would disagree with itself. */}}
+{{- define "proxy.duckdb.config" -}}
+{{- $duckdb := .root.Values.fabric.engines.duckdb -}}
+{{- $key := .key -}}
+{{- list
+  ".mode trash"
+  "INSTALL httpserver FROM community;"
+  "INSTALL iceberg;"
+  "INSTALL httpfs;"
+  "LOAD httpserver;"
+  (printf "SET threads=%d;" (int64 $duckdb.threads))
+  "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
+  (printf "SELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key))
+  | join "\n" -}}
+{{- end -}}
+
+{{/* Validate fabric.enabled against the engines actually in use. */}}
+{{- define "proxy.fabric.validate" -}}
+{{- $fabric := .Values.fabric | default dict -}}
+{{- $allowed := list "duckdb" "starrocks" -}}
+{{- $inUse := list -}}
+{{- range $name, $engine := ($fabric.engines | default dict) -}}
+{{- if not (has $name $allowed) -}}
+{{- fail (printf "fabric.engines: unknown engine %q, expected one of: %s" $name (join ", " $allowed)) -}}
+{{- end -}}
+{{- $cfg := default dict $engine -}}
+{{- if or $cfg.deploy $cfg.env $cfg.envFromSecrets -}}
+{{- $inUse = append $inUse $name -}}
+{{- end -}}
+{{- end -}}
+{{- if $fabric.enabled -}}
+{{- if not $inUse -}}
+{{- fail (printf "fabric.enabled is true but no engine is in use: set deploy, or give one connection settings. Expected one of: %s" (join ", " $allowed)) -}}
+{{- end -}}
+{{- else -}}
+{{- if $inUse -}}
+{{- fail (printf "fabric.enabled is false but these engines are configured: %s" (join ", " $inUse)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{/* Validate the observability backend / subchart-toggle combination. */}}
 {{- define "proxy.observability.validate" -}}
 {{- $backend := .Values.observability.backend -}}
