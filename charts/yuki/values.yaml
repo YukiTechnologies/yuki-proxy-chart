@@ -171,11 +171,11 @@ passthrough:
   bigqueryHost: ""
   service:
     type: ClusterIP
-  # Sized to match the main proxy — a real failover can send it full production traffic.
+  # 150m sits just above the main proxy; no CPU limit + HPA@80% absorb a full-traffic failover.
   resources:
     requests:
       memory: "300Mi"
-      cpu: "250m"
+      cpu: "150m"
     limits:
       memory: "600Mi"
 
