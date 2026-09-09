@@ -1,8 +1,13 @@
 {{- include "proxy.observability.validate" . -}}
 {{- include "proxy.shutdown.validate" . -}}
 {{- include "proxy.fabric.validate" . -}}
+{{- if .Values.canary.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ .Values.app.name }}
   labels:
@@ -16,11 +21,18 @@ metadata:
   {{- end }}
 spec:
   minReadySeconds: 10
+  {{- if .Values.canary.enabled }}
+  strategy:
+    canary:
+      steps:
+        {{- toYaml .Values.canary.steps | nindent 8 }}
+  {{- else }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 1
+  {{- end }}
   {{- with .Values.app.replicaCount }}
   {{- if not ($.Values.hpa).enabled }}
   replicas: {{ . }}
