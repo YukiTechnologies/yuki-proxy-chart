@@ -124,6 +124,15 @@ hpa:
   # fast Kubernetes default. Set to override both.
   behavior: {}
 
+# Off = plain Deployment (self-hosted default); on renders an argo-rollouts Rollout (needs the controller + CRDs).
+canary:
+  enabled: false
+  steps:
+    - setWeight: 20
+    - pause: { duration: 5m }
+    - setWeight: 50
+    - pause: { duration: 5m }
+
 proxyDeploymentType: self_hosted
 
 ingress:
