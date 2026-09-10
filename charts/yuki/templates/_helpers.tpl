@@ -47,6 +47,9 @@
 {{- $inUse = append $inUse $name -}}
 {{- end -}}
 {{- end -}}
+{{- if and (not $fabric.enabled) (($fabric.sqlTranslator | default dict).enabled) -}}
+{{- fail "fabric.enabled is false but fabric.sqlTranslator.enabled is true" -}}
+{{- end -}}
 {{- if $fabric.enabled -}}
 {{- if not $inUse -}}
 {{- fail (printf "fabric.enabled is true but no engine is in use: set deploy, or give one connection settings. Expected one of: %s" (join ", " $allowed)) -}}

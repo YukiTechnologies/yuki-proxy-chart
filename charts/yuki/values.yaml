@@ -69,6 +69,18 @@ fabric:
       deploy: false
       envFromSecrets: {}
       #  CONNECTION_STRING: {name: starrocks-creds, key: connection-string}
+  # Sidecar, reached over localhost.
+  sqlTranslator:
+    enabled: false
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-sql-translator:main-4707ccd
+    port: 5215
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: "1"
 
 serviceAccount:
   enabled: false
