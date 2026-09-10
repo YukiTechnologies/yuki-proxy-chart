@@ -121,6 +121,12 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+            {{- with .Values.fabric.sqlTranslator }}
+            {{- if .enabled }}
+            - name: QUERY_FEDERATION_TRANSLATOR_URL
+              value: "http://127.0.0.1:{{ .port }}"
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -218,3 +224,34 @@ spec:
                       || { left=$(( {{ .Values.app.drainFallbackSeconds }} - ($(date +%s) - start) )); \
                            [ $left -gt 0 ] && sleep $left; exit 1; }
 
+{{- with .Values.fabric.sqlTranslator }}
+{{- if and $.Values.fabric.enabled .enabled }}
+        - name: sql-translator
+          image: {{ .image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .port }}
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # Gates pod readiness, so the proxy never takes traffic ahead of it.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .port }}
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .port }}
+            periodSeconds: 20
+            timeoutSeconds: 2
+{{- end }}
+{{- end }}
