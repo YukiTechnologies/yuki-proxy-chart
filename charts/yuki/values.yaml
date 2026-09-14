@@ -191,6 +191,25 @@ passthrough:
     limits:
       memory: "600Mi"
 
+# Kubelet probes. Readiness keeps a retry budget: a single slow response is a
+# stall, not an outage, and with 1 failure allowed every replica can flap out of
+# the load balancer at once.
+probes:
+  startup:
+    # ~60s total startup budget.
+    periodSeconds: 2
+    timeoutSeconds: 1
+    failureThreshold: 30
+  liveness:
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    periodSeconds: 2
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+
 resources:
   requests:
     memory: "300Mi"
