@@ -48,13 +48,14 @@ spec:
           {{- end }}
           imagePullPolicy: IfNotPresent
           {{- with $duckdb.catalog }}
-          {{- if and .enabled .patSecret.name }}
+          {{- if .enabled }}
+          {{- $pat := .patSecret | default dict }}
           env:
             - name: QUERY_FEDERATION_CATALOG_PAT
               valueFrom:
                 secretKeyRef:
-                  name: {{ .patSecret.name }}
-                  key: {{ required "fabric.engines.duckdb.catalog.patSecret.key is required" .patSecret.key }}
+                  name: {{ required "fabric.engines.duckdb.catalog.patSecret.name is required when the catalog is enabled" $pat.name }}
+                  key: {{ required "fabric.engines.duckdb.catalog.patSecret.key is required when the catalog is enabled" $pat.key }}
           {{- end }}
           {{- end }}
           ports:
