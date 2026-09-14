@@ -54,6 +54,17 @@ fabric:
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
+      # Optional Iceberg REST catalog, attached when the pool starts. `database` is both the
+      # catalog warehouse and the attached name, so queries naming it resolve unchanged.
+      catalog:
+        enabled: false
+        endpoint: ""
+        database: ""
+        scope: ""
+        # Secret holding the catalog credential; mounted as an env var, never a value.
+        patSecret: {}
+        #  name: catalog-creds
+        #  key: token
       resources:
         requests:
           memory: 1Gi

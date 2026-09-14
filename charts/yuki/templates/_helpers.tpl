@@ -29,8 +29,15 @@
   "LOAD httpserver;"
   (printf "SET threads=%d;" (int64 $duckdb.threads))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
-  (printf "SELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key))
   | join "\n" -}}
+{{- $catalog := $duckdb.catalog | default dict -}}
+{{- if $catalog.enabled -}}
+{{- /* CLIENT_ID has to be present but empty: the client requires it, the server rejects a
+       non-empty one. The credential is expanded from the environment at container start. */ -}}
+{{- $ep := trimSuffix "/" $catalog.endpoint -}}
+{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" $ep $catalog.scope $catalog.database $catalog.database $ep -}}
+{{- end -}}
+{{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
 {{- end -}}
 
 {{/* Validate fabric.enabled against the engines actually in use. */}}
