@@ -36,14 +36,19 @@
        its result, so validating it here would emit the value into the init file. */ -}}
 {{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
 {{- $endpoint := replace "'" "''" (trimSuffix "/" $host) -}}
-{{- $database := required "fabric.engines.duckdb.catalog.database is required when the catalog is enabled" $catalog.database -}}
+{{- $databases := $catalog.databases | default list -}}
+{{- if not $databases -}}
+{{- fail "fabric.engines.duckdb.catalog.databases must list at least one database when the catalog is enabled" -}}
+{{- end -}}
 {{- $role := required "fabric.engines.duckdb.catalog.role is required when the catalog is enabled" $catalog.role -}}
-{{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty
-       one. The database is both a string literal and an identifier, so it is escaped as each. */ -}}
-{{- $databaseLiteral := replace "'" "''" $database -}}
-{{- $databaseIdentifier := printf "\"%s\"" (replace "\"" "\"\"" $database) -}}
+{{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty one. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
-{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" $endpoint $scope $databaseLiteral $databaseIdentifier $endpoint -}}
+{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
+{{- /* One ATTACH per database, all sharing the secret. Each name is both a string literal
+       and an identifier, so it is escaped as each. */ -}}
+{{- range $database := $databases -}}
+{{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
+{{- end -}}
 {{- end -}}
 {{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
 {{- end -}}
