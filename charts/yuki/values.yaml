@@ -61,7 +61,7 @@ fabric:
         endpoint: ""
         database: ""
         scope: ""
-        # Secret holding the catalog credential; mounted as an env var, never a value.
+        # Existing Secret holding the credential; it reaches the pool as an env var.
         patSecret: {}
         #  name: catalog-creds
         #  key: token

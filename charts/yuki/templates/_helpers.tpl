@@ -32,17 +32,17 @@
   | join "\n" -}}
 {{- $catalog := $duckdb.catalog | default dict -}}
 {{- if $catalog.enabled -}}
-{{- $pat := $catalog.patSecret | default dict -}}
-{{- $ep := trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when the catalog is enabled" $catalog.endpoint) -}}
-{{- $db := required "fabric.engines.duckdb.catalog.database is required when the catalog is enabled" $catalog.database -}}
-{{- required "fabric.engines.duckdb.catalog.patSecret.name is required when the catalog is enabled" $pat.name -}}
-{{- required "fabric.engines.duckdb.catalog.patSecret.key is required when the catalog is enabled" $pat.key -}}
-{{- /* CLIENT_ID has to be present but empty: the client requires it, the server rejects a
-       non-empty one. The credential is expanded from the environment at container start.
-       The database is both a string literal and an identifier, so it is escaped as each. */ -}}
-{{- $dbLiteral := replace "'" "''" $db -}}
-{{- $dbIdent := printf "\"%s\"" (replace "\"" "\"\"" $db) -}}
-{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" $ep (replace "'" "''" ($catalog.scope | default "")) $dbLiteral $dbIdent $ep -}}
+{{- $patSecret := $catalog.patSecret | default dict -}}
+{{- $endpoint := trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when the catalog is enabled" $catalog.endpoint) -}}
+{{- $database := required "fabric.engines.duckdb.catalog.database is required when the catalog is enabled" $catalog.database -}}
+{{- required "fabric.engines.duckdb.catalog.patSecret.name is required when the catalog is enabled" $patSecret.name -}}
+{{- required "fabric.engines.duckdb.catalog.patSecret.key is required when the catalog is enabled" $patSecret.key -}}
+{{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty
+       one. The database is both a string literal and an identifier, so it is escaped as each. */ -}}
+{{- $databaseLiteral := replace "'" "''" $database -}}
+{{- $databaseIdentifier := printf "\"%s\"" (replace "\"" "\"\"" $database) -}}
+{{- $scope := replace "'" "''" ($catalog.scope | default "") -}}
+{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" $endpoint $scope $databaseLiteral $databaseIdentifier $endpoint -}}
 {{- end -}}
 {{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
 {{- end -}}
