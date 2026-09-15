@@ -51,8 +51,7 @@ fabric:
     # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
     endpoint: ""
     # Store name comes from externalSecrets.stores, so self-hosted can use its own.
-    # Both workloads read the token as an env var, which a running pod keeps: a rotated
-    # credential only takes effect once the proxy and the pool restart.
+    # Read as an env var, so a rotated credential needs both workloads restarted.
     secret: {}
     #  store: default
     #  key: remote/secret/name
