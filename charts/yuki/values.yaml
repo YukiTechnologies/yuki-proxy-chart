@@ -61,10 +61,12 @@ fabric:
         endpoint: ""
         database: ""
         scope: ""
-        # Existing Secret holding the credential; it reaches the pool as an env var.
-        patSecret: {}
-        #  name: catalog-creds
-        #  key: token
+        # Credential, fetched the same way users' key-pairs are: from a named
+        # externalSecrets store, so a self-hosted proxy can read its own account.
+        secret: {}
+        #  store: default
+        #  key: remote/secret/name
+        #  property: token
       resources:
         requests:
           memory: 1Gi

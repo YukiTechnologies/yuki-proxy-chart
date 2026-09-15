@@ -47,16 +47,13 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           imagePullPolicy: IfNotPresent
-          {{- with $duckdb.catalog }}
-          {{- if .enabled }}
-          {{- $patSecret := .patSecret | default dict }}
+          {{- if $duckdb.catalog.enabled }}
           env:
             - name: QUERY_FEDERATION_CATALOG_PAT
               valueFrom:
                 secretKeyRef:
-                  name: {{ required "fabric.engines.duckdb.catalog.patSecret.name is required when the catalog is enabled" $patSecret.name }}
-                  key: {{ required "fabric.engines.duckdb.catalog.patSecret.key is required when the catalog is enabled" $patSecret.key }}
-          {{- end }}
+                  name: {{ $duckdb.name }}-catalog
+                  key: token
           {{- end }}
           ports:
             - containerPort: {{ $duckdb.port }}
