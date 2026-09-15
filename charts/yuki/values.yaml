@@ -41,6 +41,21 @@ app:
 # QUERY_FEDERATION_<ENGINE>_<KEY>.
 fabric:
   enabled: false
+  # Iceberg REST catalog. Shared: it describes the data, not one engine.
+  catalog:
+    enabled: false
+    # Each is attached under its own name, so queries naming it resolve unchanged.
+    databases: []
+    # Decides which tables the engines can see.
+    role: ""
+    # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
+    endpoint: ""
+    # Store name comes from externalSecrets.stores, so self-hosted can use its own.
+    # Read as an env var, so a rotated credential needs both workloads restarted.
+    secret: {}
+    #  store: default
+    #  key: remote/secret/name
+    #  property: token
   engines:
     duckdb:
       deploy: false
@@ -54,20 +69,6 @@ fabric:
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
-      # Iceberg REST catalog, attached when the pool starts.
-      catalog:
-        enabled: false
-        # Each is attached under its own name, so queries naming it resolve unchanged.
-        databases: []
-        # Decides which tables the engine can see.
-        role: ""
-        # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
-        endpoint: ""
-        # Store name comes from externalSecrets.stores, so self-hosted can use its own.
-        secret: {}
-        #  store: default
-        #  key: remote/secret/name
-        #  property: token
       resources:
         requests:
           memory: 1Gi
