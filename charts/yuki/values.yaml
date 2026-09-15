@@ -58,9 +58,13 @@ fabric:
       # catalog warehouse and the attached name, so queries naming it resolve unchanged.
       catalog:
         enabled: false
-        endpoint: ""
+        # The database holding the tables. No default: it differs per proxy.
         database: ""
-        scope: ""
+        # Snowflake role the engine reads as; it decides which tables it can see.
+        role: ""
+        # Defaults to PROXY_HOST, which is already the account's own host. Set only
+        # to reach the catalog somewhere else.
+        endpoint: ""
         # Credential, fetched the same way users' key-pairs are: from a named
         # externalSecrets store, so a self-hosted proxy can read its own account.
         secret: {}

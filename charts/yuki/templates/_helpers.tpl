@@ -32,16 +32,17 @@
   | join "\n" -}}
 {{- $catalog := $duckdb.catalog | default dict -}}
 {{- if $catalog.enabled -}}
-{{- $patSecret := $catalog.patSecret | default dict -}}
-{{- /* patSecret is validated where it is used, in the deployment: `required` renders its
-       result, so validating it here would emit the Secret name into the init file. */ -}}
-{{- $endpoint := replace "'" "''" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when the catalog is enabled" $catalog.endpoint)) -}}
+{{- /* The credential is validated in the ExternalSecret that fetches it: `required` renders
+       its result, so validating it here would emit the value into the init file. */ -}}
+{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
+{{- $endpoint := replace "'" "''" (trimSuffix "/" $host) -}}
 {{- $database := required "fabric.engines.duckdb.catalog.database is required when the catalog is enabled" $catalog.database -}}
+{{- $role := required "fabric.engines.duckdb.catalog.role is required when the catalog is enabled" $catalog.role -}}
 {{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty
        one. The database is both a string literal and an identifier, so it is escaped as each. */ -}}
 {{- $databaseLiteral := replace "'" "''" $database -}}
 {{- $databaseIdentifier := printf "\"%s\"" (replace "\"" "\"\"" $database) -}}
-{{- $scope := replace "'" "''" ($catalog.scope | default "") -}}
+{{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
 {{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" $endpoint $scope $databaseLiteral $databaseIdentifier $endpoint -}}
 {{- end -}}
 {{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
