@@ -47,6 +47,14 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           imagePullPolicy: IfNotPresent
+          {{- if $duckdb.catalog.enabled }}
+          env:
+            - name: QUERY_FEDERATION_CATALOG_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $duckdb.name }}-catalog
+                  key: token
+          {{- end }}
           ports:
             - containerPort: {{ $duckdb.port }}
               name: duckdb-http

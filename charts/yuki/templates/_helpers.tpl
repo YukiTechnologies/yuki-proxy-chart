@@ -29,8 +29,31 @@
   "LOAD httpserver;"
   (printf "SET threads=%d;" (int64 $duckdb.threads))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
-  (printf "SELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key))
   | join "\n" -}}
+{{- $catalog := $duckdb.catalog | default dict -}}
+{{- if $catalog.enabled -}}
+{{- /* Validated in the ExternalSecret, not here: `required` renders its result, which would
+       land in the init file. */ -}}
+{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
+{{- $trimmed := trimSuffix "/" $host -}}
+{{- if not $trimmed -}}
+{{- fail "fabric.engines.duckdb.catalog.endpoint normalises to empty" -}}
+{{- end -}}
+{{- $endpoint := replace "'" "''" $trimmed -}}
+{{- $databases := $catalog.databases | default list -}}
+{{- if not $databases -}}
+{{- fail "fabric.engines.duckdb.catalog.databases must list at least one database when the catalog is enabled" -}}
+{{- end -}}
+{{- $role := required "fabric.engines.duckdb.catalog.role is required when the catalog is enabled" $catalog.role -}}
+{{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
+{{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
+{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
+{{- /* Each name is both a string literal and an identifier, so it is escaped as each. */ -}}
+{{- range $database := $databases -}}
+{{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
+{{- end -}}
+{{- end -}}
+{{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
 {{- end -}}
 
 {{/* Validate fabric.enabled against the engines actually in use. */}}
