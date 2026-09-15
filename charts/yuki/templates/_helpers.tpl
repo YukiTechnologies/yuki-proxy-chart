@@ -30,21 +30,21 @@
   (printf "SET threads=%d;" (int64 $duckdb.threads))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
   | join "\n" -}}
-{{- $catalog := $duckdb.catalog | default dict -}}
+{{- $catalog := .root.Values.fabric.catalog | default dict -}}
 {{- if $catalog.enabled -}}
 {{- /* Validated in the ExternalSecret, not here: `required` renders its result, which would
        land in the init file. */ -}}
-{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
+{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
 {{- $trimmed := trimSuffix "/" $host -}}
 {{- if not $trimmed -}}
-{{- fail "fabric.engines.duckdb.catalog.endpoint normalises to empty" -}}
+{{- fail "fabric.catalog.endpoint normalises to empty" -}}
 {{- end -}}
 {{- $endpoint := replace "'" "''" $trimmed -}}
 {{- $databases := $catalog.databases | default list -}}
 {{- if not $databases -}}
-{{- fail "fabric.engines.duckdb.catalog.databases must list at least one database when the catalog is enabled" -}}
+{{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
 {{- end -}}
-{{- $role := required "fabric.engines.duckdb.catalog.role is required when the catalog is enabled" $catalog.role -}}
+{{- $role := required "fabric.catalog.role is required when the catalog is enabled" $catalog.role -}}
 {{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
 {{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}

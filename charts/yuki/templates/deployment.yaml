@@ -127,6 +127,19 @@ spec:
               value: "http://127.0.0.1:{{ .port }}"
             {{- end }}
             {{- end }}
+            {{- with .Values.fabric.catalog }}
+            {{- if .enabled }}
+            - name: QUERY_FEDERATION_CATALOG_DATABASES
+              value: {{ join "," .databases | quote }}
+            - name: QUERY_FEDERATION_CATALOG_ROLE
+              value: {{ .role | quote }}
+            - name: QUERY_FEDERATION_CATALOG_PAT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.app.name }}-catalog
+                  key: token
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- if eq .Values.observability.backend "otlp" }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
