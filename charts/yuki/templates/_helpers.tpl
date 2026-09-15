@@ -70,6 +70,15 @@
 {{- $inUse = append $inUse $name -}}
 {{- end -}}
 {{- end -}}
+{{- $catalog := $fabric.catalog | default dict -}}
+{{- if $catalog.enabled -}}
+{{- if not $catalog.databases -}}
+{{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
+{{- end -}}
+{{- if not $catalog.role -}}
+{{- fail "fabric.catalog.role is required when the catalog is enabled" -}}
+{{- end -}}
+{{- end -}}
 {{- if and (not $fabric.enabled) (($fabric.sqlTranslator | default dict).enabled) -}}
 {{- fail "fabric.enabled is false but fabric.sqlTranslator.enabled is true" -}}
 {{- end -}}
