@@ -33,10 +33,10 @@
 {{- $catalog := $duckdb.catalog | default dict -}}
 {{- if $catalog.enabled -}}
 {{- $patSecret := $catalog.patSecret | default dict -}}
-{{- $endpoint := trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when the catalog is enabled" $catalog.endpoint) -}}
+{{- /* patSecret is validated where it is used, in the deployment: `required` renders its
+       result, so validating it here would emit the Secret name into the init file. */ -}}
+{{- $endpoint := replace "'" "''" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when the catalog is enabled" $catalog.endpoint)) -}}
 {{- $database := required "fabric.engines.duckdb.catalog.database is required when the catalog is enabled" $catalog.database -}}
-{{- required "fabric.engines.duckdb.catalog.patSecret.name is required when the catalog is enabled" $patSecret.name -}}
-{{- required "fabric.engines.duckdb.catalog.patSecret.key is required when the catalog is enabled" $patSecret.key -}}
 {{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty
        one. The database is both a string literal and an identifier, so it is escaped as each. */ -}}
 {{- $databaseLiteral := replace "'" "''" $database -}}
