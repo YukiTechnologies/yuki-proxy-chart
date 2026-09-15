@@ -54,20 +54,16 @@ fabric:
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
-      # Optional Iceberg REST catalog, attached when the pool starts. `database` is both the
-      # catalog warehouse and the attached name, so queries naming it resolve unchanged.
+      # Iceberg REST catalog, attached when the pool starts.
       catalog:
         enabled: false
-        # Databases holding the tables. Each is attached under its own name, so a
-        # query naming any of them resolves unchanged.
+        # Each is attached under its own name, so queries naming it resolve unchanged.
         databases: []
-        # Snowflake role the engine reads as; it decides which tables it can see.
+        # Decides which tables the engine can see.
         role: ""
-        # Defaults to PROXY_HOST, which is already the account's own host. Set only
-        # to reach the catalog somewhere else.
+        # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
         endpoint: ""
-        # Credential, fetched the same way users' key-pairs are: from a named
-        # externalSecrets store, so a self-hosted proxy can read its own account.
+        # Store name comes from externalSecrets.stores, so self-hosted can use its own.
         secret: {}
         #  store: default
         #  key: remote/secret/name

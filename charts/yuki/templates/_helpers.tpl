@@ -32,8 +32,8 @@
   | join "\n" -}}
 {{- $catalog := $duckdb.catalog | default dict -}}
 {{- if $catalog.enabled -}}
-{{- /* The credential is validated in the ExternalSecret that fetches it: `required` renders
-       its result, so validating it here would emit the value into the init file. */ -}}
+{{- /* Validated in the ExternalSecret, not here: `required` renders its result, which would
+       land in the init file. */ -}}
 {{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
 {{- $endpoint := replace "'" "''" (trimSuffix "/" $host) -}}
 {{- $databases := $catalog.databases | default list -}}
@@ -41,11 +41,10 @@
 {{- fail "fabric.engines.duckdb.catalog.databases must list at least one database when the catalog is enabled" -}}
 {{- end -}}
 {{- $role := required "fabric.engines.duckdb.catalog.role is required when the catalog is enabled" $catalog.role -}}
-{{- /* CLIENT_ID is present but empty: the client requires it, the server rejects a non-empty one. */ -}}
+{{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
 {{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
-{{- /* One ATTACH per database, all sharing the secret. Each name is both a string literal
-       and an identifier, so it is escaped as each. */ -}}
+{{- /* Each name is both a string literal and an identifier, so it is escaped as each. */ -}}
 {{- range $database := $databases -}}
 {{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
 {{- end -}}
