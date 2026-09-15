@@ -35,7 +35,11 @@
 {{- /* Validated in the ExternalSecret, not here: `required` renders its result, which would
        land in the init file. */ -}}
 {{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.engines.duckdb.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
-{{- $endpoint := replace "'" "''" (trimSuffix "/" $host) -}}
+{{- $trimmed := trimSuffix "/" $host -}}
+{{- if not $trimmed -}}
+{{- fail "fabric.engines.duckdb.catalog.endpoint normalises to empty" -}}
+{{- end -}}
+{{- $endpoint := replace "'" "''" $trimmed -}}
 {{- $databases := $catalog.databases | default list -}}
 {{- if not $databases -}}
 {{- fail "fabric.engines.duckdb.catalog.databases must list at least one database when the catalog is enabled" -}}
