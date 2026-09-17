@@ -13,6 +13,29 @@ entries:
   proxy:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2026-09-17T06:22:46.328536049Z"
+    dependencies:
+    - condition: externalSecrets.operator.enabled
+      name: external-secrets
+      repository: https://charts.external-secrets.io
+      version: 0.19.1
+    - condition: groundcover.enabled
+      name: groundcover
+      repository: https://helm.groundcover.com
+      version: 1.11.997
+    - alias: starrocks
+      condition: fabric.engines.starrocks.deploy
+      name: kube-starrocks
+      repository: https://starrocks.github.io/starrocks-kubernetes-operator
+      version: 1.11.7
+    description: A Helm chart for Yuki Proxy Deployment
+    digest: 213354fd36c059796121fee4cac8e49e59da40b54b66247cbadc0c556aba7dcb
+    name: proxy
+    urls:
+    - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/proxy-0.0.181/proxy-0.0.181.tgz
+    version: 0.0.181
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2026-09-15T15:26:20.919772365Z"
     dependencies:
     - condition: externalSecrets.operator.enabled
@@ -3754,4 +3777,4 @@ entries:
     urls:
     - https://github.com/YukiTechnologies/yuki-proxy-chart/releases/download/yuki-duckdb-0.1.0/yuki-duckdb-0.1.0.tgz
     version: 0.1.0
-generated: "2026-09-15T15:26:20.92025339Z"
+generated: "2026-09-17T06:22:46.329310832Z"
