@@ -1,0 +1,18 @@
+{{- if .Values.gcpWorkloadIdentity.enabled }}
+{{- $g := .Values.gcpWorkloadIdentity }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-gcp-wif
+data:
+  # external_account (WIF) config — identifiers only, no secret; ADC reads the projected token.
+  credential-configuration.json: |
+    {
+      "type": "external_account",
+      "audience": "//iam.googleapis.com/projects/{{ required "gcpWorkloadIdentity.projectNumber is required" $g.projectNumber }}/locations/global/workloadIdentityPools/{{ required "gcpWorkloadIdentity.poolId is required" $g.poolId }}/providers/{{ required "gcpWorkloadIdentity.providerId is required" $g.providerId }}",
+      "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+      "token_url": "https://sts.googleapis.com/v1/token",
+      "credential_source": { "file": "{{ $g.tokenPath }}", "format": { "type": "text" } },
+      "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{{ required "gcpWorkloadIdentity.serviceAccountEmail is required" $g.serviceAccountEmail }}:generateAccessToken"
+    }
+{{- end }}
