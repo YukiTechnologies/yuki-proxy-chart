@@ -20,6 +20,8 @@ spec:
         app: {{ .name }}
         group: {{ $.Values.app.group }}
     spec:
+      # The proxy's: it can read the Redis encryption key secret in AWS.
+      serviceAccountName: {{ $.Values.serviceAccount.serviceAccountName | default "default" }}
       terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
       {{- with .affinity }}
       affinity:
@@ -36,6 +38,25 @@ spec:
           env:
             - name: SNOWFLAKE_PROXY_URL
               value: http://{{ $.Values.app.name }}:{{ $.Values.app.service.port }}
+            # Reads the proxy's sessions, so it takes the proxy's Redis settings and key.
+            {{- range $key := list "REDIS_HOST" "REDIS_USER" "REDIS_PASSWORD" "AWS_REGION" }}
+            {{- with index $.Values.app.container.env $key }}
+            - name: {{ $key }}
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with index ($.Values.app.container.envFromSecrets | default dict) $key }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- end }}
+            - name: REDIS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: redis-encryption-key
+                  key: password
             {{- range $key, $value := .env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
