@@ -1,0 +1,93 @@
+{{- with .Values.fabric.gateway }}
+{{- if .enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  labels:
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/version: {{ $.Release.Name }}-{{ $.Release.Revision }}
+    app: {{ .name }}
+    group: {{ $.Values.app.group }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+        group: {{ $.Values.app.group }}
+    spec:
+      terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: gateway
+          image: {{ required "fabric.gateway.image is required" .image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SNOWFLAKE_PROXY_URL
+              value: http://{{ $.Values.app.name }}:{{ $.Values.app.service.port }}
+            {{- range $key, $value := .env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          ports:
+            - containerPort: {{ .port }}
+              name: gateway-http
+          {{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /fabric/health
+              port: gateway-http
+            periodSeconds: 5
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /fabric/health
+              port: gateway-http
+            periodSeconds: 20
+            timeoutSeconds: 2
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ .drainSeconds }}"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  labels:
+    app.kubernetes.io/name: {{ .name }}
+    app.kubernetes.io/version: {{ $.Release.Name }}-{{ $.Release.Revision }}
+    app: {{ .name }}
+    group: {{ $.Values.app.group }}
+  annotations:
+    # Wins over the Ingress-level path, which is the proxy's /health/ready.
+    alb.ingress.kubernetes.io/healthcheck-path: /fabric/health
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .name }}
+  ports:
+    - name: gateway
+      port: {{ .port }}
+      targetPort: gateway-http
+{{- end }}
+{{- end }}
