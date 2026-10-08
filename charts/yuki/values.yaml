@@ -97,6 +97,29 @@ fabric:
         memory: 512Mi
         cpu: "1"
 
+  # Front door for the account: the ingress sends all traffic here, and it forwards to the
+  # proxy (or, later, a query engine). Independent of fabric.enabled, which is the in-proxy path.
+  gateway:
+    enabled: false
+    name: yuki-fabric-gateway
+    image: ""
+    port: 8080
+    replicaCount: 2
+    # Must exceed drainSeconds plus time for in-flight requests to finish.
+    terminationGracePeriodSeconds: 75
+    # Keeps serving after SIGTERM until the ALB has deregistered the pod (deregistration_delay).
+    drainSeconds: 45
+    # Extra env, e.g. BIGQUERY_PROXY_URL. SNOWFLAKE_PROXY_URL is set to the proxy Service.
+    env: {}
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+    affinity: {}
+    tolerations: []
+
 serviceAccount:
   enabled: false
 

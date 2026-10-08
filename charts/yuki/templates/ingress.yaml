@@ -49,10 +49,16 @@ spec:
                 port:
                   number: 8000
           {{- end }}
+          {{- $gateway := .Values.fabric.gateway | default dict }}
           - path: /
             pathType: Prefix
             backend:
               service:
+                {{- if and $gateway.enabled (not .Values.ingress.backend.serviceName) }}
+                name: {{ $gateway.name }}
+                port:
+                  number: {{ $gateway.port }}
+                {{- else }}
                 name: {{ .Values.ingress.backend.serviceName | default .Values.app.name }}
                 port:
                   {{- if .Values.ingress.backend.servicePortName }}
@@ -60,4 +66,5 @@ spec:
                   {{- else }}
                   number: {{ .Values.ingress.backend.servicePortNumber | default .Values.app.service.port }}
                   {{- end }}
+                {{- end }}
 {{- end}}
