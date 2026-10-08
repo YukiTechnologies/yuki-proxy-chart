@@ -20,6 +20,8 @@ spec:
         app: {{ .name }}
         group: {{ $.Values.app.group }}
     spec:
+      # The proxy's: it can read the Redis encryption key secret in AWS.
+      serviceAccountName: {{ ($.Values.serviceAccount | default dict).serviceAccountName | default "default" }}
       terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds }}
       {{- with .affinity }}
       affinity:
@@ -36,6 +38,37 @@ spec:
           env:
             - name: SNOWFLAKE_PROXY_URL
               value: http://{{ $.Values.app.name }}:{{ $.Values.app.service.port }}
+            # Reads the proxy's sessions, so it takes the proxy's Redis settings and key.
+            # One entry per name: the gateway's own env wins, then a secret, then a plain value.
+            {{- $own := .env | default dict }}
+            {{- $plain := $.Values.app.container.env | default dict }}
+            {{- $secrets := $.Values.app.container.envFromSecrets | default dict }}
+            {{- range $key := list "REDIS_HOST" "REDIS_USER" "REDIS_PASSWORD" "AWS_REGION" }}
+            {{- if not (hasKey $own $key) }}
+            {{- if index $secrets $key }}
+            {{- with index $secrets $key }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: {{ .key }}
+            {{- end }}
+            {{- else if index $plain $key }}
+            - name: {{ $key }}
+              value: {{ index $plain $key | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if not (hasKey $own "REDIS_ENCRYPTION_KEY") }}
+            # Fallback only: the key is read from AWS first, and without one the gateway still
+            # forwards, just without sessions.
+            - name: REDIS_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: redis-encryption-key
+                  key: password
+                  optional: true
+            {{- end }}
             {{- range $key, $value := .env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
