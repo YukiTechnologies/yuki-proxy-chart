@@ -138,6 +138,17 @@ externalSecrets:
   #     privateKeyProperty: private_key
   #     # No passphrase for user2
 
+# Read customer secrets from GCP Secret Manager via Workload Identity Federation.
+# Off by default; Yuki-hosted envs fill these from private values (never self-hosted).
+gcpWorkloadIdentity:
+  enabled: false
+  audience: ""                       # projected-token audience, e.g. https://prod.yukicomputing.com/
+  tokenPath: /var/run/secrets/gcp/token
+  projectNumber: ""                  # WIF pool host project number
+  poolId: ""                         # workload identity pool id
+  providerId: ""                     # provider id (trusts this cluster's OIDC issuer + yuki-proxy-sa)
+  serviceAccountEmail: ""            # GSA the proxy impersonates
+
 hpa:
   enabled: true
   minReplicas: 5

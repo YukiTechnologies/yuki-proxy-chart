@@ -194,6 +194,19 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
+            {{- if .Values.gcpWorkloadIdentity.enabled }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /etc/gcp/credential-configuration.json
+            {{- end }}
+          {{- if .Values.gcpWorkloadIdentity.enabled }}
+          volumeMounts:
+            - name: gcp-wif-token
+              mountPath: {{ .Values.gcpWorkloadIdentity.tokenPath | dir }}
+              readOnly: true
+            - name: gcp-wif-config
+              mountPath: /etc/gcp
+              readOnly: true
+          {{- end }}
 
           startupProbe:
             httpGet:
@@ -273,3 +286,15 @@ spec:
             timeoutSeconds: 2
 {{- end }}
 {{- end }}
+      {{- if .Values.gcpWorkloadIdentity.enabled }}
+      volumes:
+        - name: gcp-wif-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: {{ required "gcpWorkloadIdentity.audience is required" .Values.gcpWorkloadIdentity.audience | quote }}
+                  path: {{ .Values.gcpWorkloadIdentity.tokenPath | base }}
+        - name: gcp-wif-config
+          configMap:
+            name: {{ .Values.app.name }}-gcp-wif
+      {{- end }}
