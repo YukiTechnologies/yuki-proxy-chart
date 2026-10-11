@@ -70,7 +70,7 @@ spec:
                   optional: true
             {{- end }}
             {{- if and $.Values.secret $.Values.secret.aws.enabled }}
-            # Self-hosted without IRSA: the proxy's AWS keys, or the two read different encryption keys.
+            # The proxy's AWS keys, so both read the same encryption key.
             {{- range $key := list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" }}
             - name: {{ $key }}
               valueFrom:
