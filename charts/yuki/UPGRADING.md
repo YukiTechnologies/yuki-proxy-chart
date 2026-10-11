@@ -1,5 +1,24 @@
 # Upgrading
 
+## DuckDB engine runs Duckling (DuckDB v2)
+
+`fabric.engines.duckdb` now deploys Duckling, the Python DuckDB v2 service from
+yuki-fabric/Duckling. Duckling replaces the DuckDB CLI + httpserver image. The
+chart no longer renders a `.duckdbrc`:
+
+- The Secret holds `init.sql` (plain SQL, mounted at `/etc/duckling/init.sql`)
+  and `api-key`. Duckling reads the key from the `DUCKLING_API_KEY` env, not
+  from the init SQL.
+- Pods listen on 9999. The Service port (`fabric.engines.duckdb.port`) and the
+  proxy's `QUERY_FEDERATION_DUCKDB_URL` are unchanged.
+- An init SQL error now fails the pod's startup. The old CLI only printed it.
+
+**Impact:** `fabric.engines.duckdb.image` must be a Duckling image.
+Pre-Duckling `duckdb:*` images crash on this chart, and Duckling images crash
+on older charts. Ship the chart and the image pin (terraform-infra
+`images.duckdb`) together. Readiness probes keep the old pods serving until the
+new ones pass, and the proxy falls back to Snowflake while DuckDB is down.
+
 ## Datadog fully removed (this version)
 
 Yuki has closed its Datadog account. This version deletes the

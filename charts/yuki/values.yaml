@@ -60,7 +60,10 @@ fabric:
     duckdb:
       deploy: false
       name: yuki-duckdb
+      # A Duckling image (yuki-fabric/Duckling, DuckDB v2). Pinned per environment by
+      # terraform-infra (images.duckdb); the pre-Duckling httpserver images do not fit this chart.
       image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
+      # Service port, which the proxy's QUERY_FEDERATION_DUCKDB_URL uses; pods listen on 9999.
       port: 80
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
