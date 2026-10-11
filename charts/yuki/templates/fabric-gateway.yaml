@@ -72,11 +72,13 @@ spec:
             {{- if and $.Values.secret $.Values.secret.aws.enabled }}
             # The proxy's AWS keys, so both read the same encryption key.
             {{- range $key := list "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY" }}
+            {{- if not (hasKey $own $key) }}
             - name: {{ $key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Values.secret.aws.name }}
                   key: {{ $key }}
+            {{- end }}
             {{- end }}
             {{- end }}
             {{- range $key, $value := .env }}
