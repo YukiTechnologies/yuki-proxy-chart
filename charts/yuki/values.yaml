@@ -22,6 +22,15 @@ app:
       HEALTH_CHECK_REDIS_TIMEOUT_MS: 200
       HEALTH_CHECK_SYSTEM_TIMEOUT_MS: 500
       HEALTH_CHECK_COMPUTE_TIMEOUT_MS: 500
+      # Region of the AWS Secrets Manager secrets the proxy reads; us-east-1 when unset.
+      # AWS_REGION: us-east-1
+      # Key-pair lookup by secret prefix, for Snowflake users not registered in Yuki (e.g. rotating users).
+      # A user missing from Redis is read from AWS secret <prefix><UPPERCASED username>; usernames with
+      # anything but letters, digits and _ are not looked up. The proxy's role needs
+      # secretsmanager:GetSecretValue on those secrets (the self_hosted_config policy requires the service tag).
+      # SNOWFLAKE_KEY_PAIR_SECRET_PREFIX: acme/snowflake/
+      # SNOWFLAKE_KEY_PAIR_SECRET_PRIVATE_KEY_PROPERTY: private_key   # required with the prefix
+      # SNOWFLAKE_KEY_PAIR_SECRET_PASSPHRASE_PROPERTY: passphrase     # optional
 
 # Additional environment variables from existing Kubernetes Secrets
 #  envFromSecrets:
