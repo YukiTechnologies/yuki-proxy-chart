@@ -79,6 +79,17 @@ spec:
                   key: {{ $key }}
             {{- end }}
             {{- end }}
+            {{- $duckdb := $.Values.fabric.engines.duckdb | default dict }}
+            {{- if and $.Values.fabric.enabled $duckdb.deploy (not (hasKey $own "DUCKLING_URL")) }}
+            # Duckling, behind the DuckDB engine Service.
+            - name: DUCKLING_URL
+              value: "http://{{ $duckdb.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $duckdb.port }}"
+            - name: DUCKLING_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $duckdb.name }}-secret
+                  key: api-key
+            {{- end }}
             {{- range $key, $value := .env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
