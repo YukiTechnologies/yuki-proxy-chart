@@ -17,8 +17,8 @@ spec:
   template:
     metadata:
       annotations:
-        # subPath mounts do not see Secret updates; roll pods when the config changes.
-        checksum/config: {{ include "proxy.duckdb.config" (dict "root" . "key" (include "proxy.duckdb.apiKey" .)) | sha256sum }}
+        # Duckling reads both once at startup; roll pods when either changes.
+        checksum/config: {{ printf "%s\n%s" (include "proxy.duckdb.initSql" .) (include "proxy.duckdb.apiKey" .) | sha256sum }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}
@@ -33,12 +33,12 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: duckdbrc
+        - name: init-sql
           secret:
             secretName: {{ $duckdb.name }}-secret
             items:
-              - key: .duckdbrc
-                path: .duckdbrc
+              - key: init.sql
+                path: init.sql
       containers:
         - name: {{ $duckdb.name }}
           image: {{ $duckdb.image }}
@@ -47,8 +47,15 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           imagePullPolicy: IfNotPresent
-          {{- if (.Values.fabric.catalog | default dict).enabled }}
           env:
+            - name: DUCKDB_INIT_FILE
+              value: /etc/duckling/init.sql
+            - name: DUCKLING_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $duckdb.name }}-secret
+                  key: api-key
+          {{- if (.Values.fabric.catalog | default dict).enabled }}
             - name: QUERY_FEDERATION_CATALOG_PAT
               valueFrom:
                 secretKeyRef:
@@ -56,12 +63,12 @@ spec:
                   key: token
           {{- end }}
           ports:
-            - containerPort: {{ $duckdb.port }}
+            # Duckling's fixed port; the Service maps $duckdb.port onto it.
+            - containerPort: 9999
               name: duckdb-http
           volumeMounts:
-            - name: duckdbrc
-              mountPath: /home/duckdb/.duckdbrc
-              subPath: .duckdbrc
+            - name: init-sql
+              mountPath: /etc/duckling
               readOnly: true
           readinessProbe:
             httpGet:

@@ -15,26 +15,23 @@
 {{- $key -}}
 {{- end -}}
 
-{{/* DuckDB engine config. Hashed by both pod templates, so it must contain no metadata.
-     Takes (dict "root" $ "key" $key): the caller resolves the key once, or a single render
-     would generate a different one per include and the Secret would disagree with itself. */}}
-{{- define "proxy.duckdb.config" -}}
-{{- $duckdb := .root.Values.fabric.engines.duckdb -}}
-{{- $key := .key -}}
+{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once per pod at startup. Plain SQL: the
+     extensions are baked into the image, and the key and port are not DuckDB's concern.
+     Hashed by the pod template, so it must contain no metadata. */}}
+{{- define "proxy.duckdb.initSql" -}}
+{{- $duckdb := .Values.fabric.engines.duckdb -}}
 {{- list
-  ".mode trash"
-  "INSTALL httpserver FROM community;"
-  "INSTALL iceberg;"
-  "INSTALL httpfs;"
-  "LOAD httpserver;"
+  "LOAD iceberg;"
+  "LOAD httpfs;"
+  "SET enable_logging = true;"
   (printf "SET threads=%d;" (int64 $duckdb.threads))
-  "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain);"
+  "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain, VALIDATION 'none');"
   | join "\n" -}}
-{{- $catalog := .root.Values.fabric.catalog | default dict -}}
+{{- $catalog := .Values.fabric.catalog | default dict -}}
 {{- if $catalog.enabled -}}
 {{- /* Validated in the ExternalSecret, not here: `required` renders its result, which would
        land in the init file. */ -}}
-{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.root.Values.app.container.env).PROXY_HOST))) -}}
+{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST))) -}}
 {{- $trimmed := trimSuffix "/" $host -}}
 {{- if not $trimmed -}}
 {{- fail "fabric.catalog.endpoint normalises to empty" -}}
@@ -47,13 +44,12 @@
 {{- $role := required "fabric.catalog.role is required when the catalog is enabled" $catalog.role -}}
 {{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
-{{- printf "\nLOAD iceberg;\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
+{{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
 {{- /* Each name is both a string literal and an identifier, so it is escaped as each. */ -}}
 {{- range $database := $databases -}}
 {{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
 {{- end -}}
 {{- end -}}
-{{- printf "\nSELECT httpserve_start('0.0.0.0', %d, '%s');" (int64 $duckdb.port) (replace "'" "''" $key) -}}
 {{- end -}}
 
 {{/* Validate fabric.enabled against the engines actually in use. */}}
