@@ -38,12 +38,12 @@ spec:
           env:
             - name: SNOWFLAKE_PROXY_URL
               value: http://{{ $.Values.app.name }}:{{ $.Values.app.service.port }}
-            # Reads the proxy's sessions and decides as the proxy does, so it takes the proxy's settings.
+            # Reads the proxy's sessions, so it takes the proxy's Redis settings and key.
             # One entry per name: the gateway's own env wins, then a secret, then a plain value.
             {{- $own := .env | default dict }}
             {{- $plain := $.Values.app.container.env | default dict }}
             {{- $secrets := $.Values.app.container.envFromSecrets | default dict }}
-            {{- range $key := list "REDIS_HOST" "REDIS_USER" "REDIS_PASSWORD" "AWS_REGION" "COMPUTE_HOST" "ACCOUNT_GUID" "FABRIC_FORCE_SHADOW_ENGINES" }}
+            {{- range $key := list "REDIS_HOST" "REDIS_USER" "REDIS_PASSWORD" "AWS_REGION" }}
             {{- if not (hasKey $own $key) }}
             {{- if index $secrets $key }}
             {{- with index $secrets $key }}
