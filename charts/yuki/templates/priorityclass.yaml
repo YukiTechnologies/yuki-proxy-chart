@@ -1,0 +1,16 @@
+{{- if .Values.priorityClass.create }}
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  # Cluster-scoped, so the namespace in the name keeps installs from fighting over one object.
+  name: {{ include "proxy.priorityClassName" . }}
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.name }}
+    app: {{ .Values.app.name }}
+    group: {{ .Values.app.group }}
+value: {{ .Values.priorityClass.value | int }}
+globalDefault: false
+# Outranks default-priority pods for eviction and preemption without ever preempting one itself.
+preemptionPolicy: Never
+description: "Yuki proxy pods in {{ .Release.Namespace }}: evicted and preempted after default-priority pods, never preempting any."
+{{- end }}

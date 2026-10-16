@@ -226,8 +226,12 @@ passthrough:
     requests:
       memory: "300Mi"
       cpu: "250m"
+      # Read-only root; the emptyDirs below (80Mi) and stdout logs are all it writes. Requested for
+      # the proxy's reason: unrequested means first out under node disk pressure.
+      ephemeral-storage: "192Mi"
     limits:
       memory: "600Mi"
+      ephemeral-storage: "512Mi"
 
 # Kubelet probes. Readiness keeps a retry budget: a single slow response is a
 # stall, not an outage, and with 1 failure allowed every replica can flap out of
@@ -252,8 +256,14 @@ resources:
   requests:
     memory: "300Mi"
     cpu: "250m"
+    # The proxy writes almost nothing locally (logs go to stdout; ~28Mi seen in prod), but with no
+    # request any usage counts as over-request, which makes the pod the kubelet's first eviction
+    # pick when the *node* runs short of disk, whoever filled it.
+    ephemeral-storage: "128Mi"
   limits:
     memory: "600Mi"
+    # The kubelet evicts a pod over this; container logs count, so leave room for log rotation.
+    ephemeral-storage: "512Mi"
 
 affinity: { }
 tolerations: [ ]
@@ -261,15 +271,36 @@ tolerations: [ ]
 # Pin the proxy pods to specific nodes. Empty = schedule anywhere.
 nodeSelector: { }
 
-topologySpreadConstraints: []
-# Example:
-# topologySpreadConstraints:
-#   - maxSkew: 1
-#     topologyKey: topology.kubernetes.io/zone
-#     whenUnsatisfiable: ScheduleAnyway
-#     labelSelector:
-#       matchLabels:
-#         app: yuki-proxy
+# One proxy pod per node where the cluster allows it, so a node lost to disk pressure or
+# consolidation costs one replica, not several. Soft: a small cluster still schedules, unevenly.
+# Rendered through tpl, so the selector follows app.name. Replace the list to add a zone spread.
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: "{{ .Values.app.name }}"
+
+# Evicted and preempted after default-priority (0) pods: the kubelet ranks node-pressure evictions
+# by priority (after request overuse) and the scheduler preempts low priority first, so monitoring
+# and other unclassed neighbours go before the proxy. preemptionPolicy Never: the proxy never
+# evicts anyone to get scheduled. Cluster-scoped; named <app.name>-<namespace> so every install
+# owns its own class.
+priorityClass:
+  create: true
+  # Set with create: false to use a class that already exists.
+  name: ""
+  # Above 0, far below system-cluster-critical (2000000000).
+  value: 1000000
+
+# Karpenter (which EKS Auto Mode runs) consolidates "underutilized" nodes by evicting their pods.
+# This annotation exempts any node running a proxy or passthrough pod from that and from drift.
+# Node expiry (21 days on Auto Mode), node-pressure eviction and kubectl drain still apply.
+# It costs: a node holding one annotated pod stays at its size. Where one-pod-at-a-time
+# disruption is fine, set this false and enable podDisruptionBudget instead.
+karpenter:
+  doNotDisrupt: true
 
 podDisruptionBudget:
   enabled: false
