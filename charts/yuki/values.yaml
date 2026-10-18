@@ -77,6 +77,9 @@ fabric:
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
       threads: 2
+      # About half of resources.limits.memory: Python, Arrow and httpfs allocate outside it,
+      # and DuckDB's own default (80% of the limit) gets the pod OOMKilled.
+      memoryLimit: 1GB
       # Empty reuses the key already in the Secret, or mints one.
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa
