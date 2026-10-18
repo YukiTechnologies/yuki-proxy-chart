@@ -77,6 +77,8 @@ fabric:
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
       threads: 2
+      # ~Half of resources.limits.memory; Python and Arrow need the rest.
+      memoryLimit: 1GB
       # Empty reuses the key already in the Secret, or mints one.
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa

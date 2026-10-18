@@ -25,6 +25,7 @@
   "LOAD httpfs;"
   "SET enable_logging = true;"
   (printf "SET threads=%d;" (int64 $duckdb.threads))
+  (printf "SET memory_limit='%s';" (replace "'" "''" (required "fabric.engines.duckdb.memoryLimit is required" $duckdb.memoryLimit)))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain, VALIDATION 'none');"
   | join "\n" -}}
 {{- $catalog := .Values.fabric.catalog | default dict -}}
