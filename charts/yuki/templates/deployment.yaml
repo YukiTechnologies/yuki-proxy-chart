@@ -284,7 +284,8 @@ spec:
               port: {{ .port }}
             periodSeconds: 20
             timeoutSeconds: 2
-          # Stops only once the proxy has drained and exited: the proxy translates until then.
+          # On a pod drain, stops only once the proxy has exited: the proxy translates until then.
+          # Not draining within 5s (both hooks start together) means the translator alone is restarting.
           lifecycle:
             preStop:
               exec:
@@ -292,11 +293,15 @@ spec:
                   - python
                   - -c
                   - |
-                    import time, urllib.request
+                    import json, time, urllib.request
+                    start = time.time()
                     while True:
                         try:
-                            urllib.request.urlopen("http://127.0.0.1:{{ $.Values.app.container.port }}/health/live", timeout=2)
+                            status = urllib.request.urlopen("http://127.0.0.1:{{ $.Values.app.container.port }}/health/drain-status", timeout=2)
+                            draining = json.load(status)["draining"]
                         except Exception:
+                            break
+                        if not draining and time.time() - start > 5:
                             break
                         time.sleep(1)
 {{- end }}
