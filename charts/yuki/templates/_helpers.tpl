@@ -46,9 +46,10 @@
 {{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
 {{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
-{{- /* Each name is both a string literal and an identifier, so it is escaped as each. */ -}}
+{{- /* Each name is both a string literal and an identifier, so it is escaped as each.
+       MAX_TABLE_STALENESS reuses table metadata instead of asking the catalog per query. */ -}}
 {{- range $database := $databases -}}
-{{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog);" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
+{{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog, MAX_TABLE_STALENESS '60 seconds');" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
