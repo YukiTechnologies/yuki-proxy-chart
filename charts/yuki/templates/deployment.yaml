@@ -293,14 +293,17 @@ spec:
                   - python
                   - -c
                   - |
-                    import json, time, urllib.request
-                    start = time.time()
+                    import json, time, urllib.error, urllib.request
+                    start, draining = time.time(), False
                     while True:
                         try:
                             status = urllib.request.urlopen("http://127.0.0.1:{{ $.Values.app.container.port }}/health/drain-status", timeout=2)
-                            draining = json.load(status)["draining"]
+                            draining = draining or json.load(status).get("draining") is True
+                        except urllib.error.URLError as e:
+                            if isinstance(e.reason, ConnectionRefusedError):
+                                break
                         except Exception:
-                            break
+                            pass
                         if not draining and time.time() - start > 5:
                             break
                         time.sleep(1)
