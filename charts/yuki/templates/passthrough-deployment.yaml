@@ -18,8 +18,15 @@ spec:
       labels:
         app: {{ .Values.app.name }}-passthrough
         group: {{ .Values.app.group }}
+      {{- with include "proxy.disruptionAnnotations" . }}
+      annotations:
+        {{- . | nindent 8 }}
+      {{- end }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.passthrough.terminationGracePeriodSeconds }}
+      {{- with include "proxy.priorityClassName" . }}
+      priorityClassName: {{ . }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 101
