@@ -45,6 +45,13 @@ data:
           add_header Content-Type text/plain;
         }
 
+        # Proxy ALB health-check path — without this it falls through to Snowflake (404) after failover.
+        location = /health/ready {
+          access_log off;
+          return 200 "ok";
+          add_header Content-Type text/plain;
+        }
+
         location / {
           # $upstream forces periodic re-resolution; a literal proxy_pass target is resolved once at startup.
           set $upstream {{ $upstreamUrl }};
