@@ -1,5 +1,28 @@
 # Upgrading
 
+## Eviction and consolidation hardening
+
+Proxy and passthrough pods now carry an ephemeral-storage request and limit, a
+non-preempting PriorityClass, a `karpenter.sh/do-not-disrupt: "true"` annotation
+and a soft one-pod-per-node spread, after a hosted proxy pod was hard-evicted for
+*node* disk pressure it did not cause and its replacement was consolidated away
+two minutes later. Upgrading rolls both Deployments once.
+
+**Impact:**
+- The chart creates a cluster-scoped `PriorityClass` named
+  `<app.name>-<namespace>`. If whoever runs `helm upgrade` cannot create
+  cluster-scoped resources, set `priorityClass.create: false`, optionally with
+  `priorityClass.name` pointing at a class that already exists.
+- On Karpenter / EKS Auto Mode clusters, a node running a proxy or passthrough
+  pod is no longer consolidated or drifted while the pod runs. That protects
+  availability at a cost: an underutilized node stays at its size. Set
+  `karpenter.doNotDisrupt: false` to opt out, ideally together with
+  `podDisruptionBudget.enabled: true`, which slows disruption instead of
+  blocking it.
+- The kubelet evicts a pod whose ephemeral-storage use passes the new limit
+  (`resources.limits.ephemeral-storage`, 512Mi). Logs go to stdout and the proxy
+  writes little else, so raise it only if your image writes locally.
+
 ## DuckDB engine runs Duckling (DuckDB v2)
 
 `fabric.engines.duckdb` now deploys Duckling, the Python DuckDB v2 service from

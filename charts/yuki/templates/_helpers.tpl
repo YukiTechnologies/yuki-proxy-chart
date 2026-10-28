@@ -132,6 +132,23 @@
 {{- end -}}
 {{- end -}}
 
+{{/* PriorityClass the proxy and passthrough pods run under; empty leaves them at default priority. */}}
+{{- define "proxy.priorityClassName" -}}
+{{- $pc := .Values.priorityClass | default dict -}}
+{{- if $pc.create -}}
+{{- $pc.name | default (printf "%s-%s" .Values.app.name .Release.Namespace) -}}
+{{- else -}}
+{{- $pc.name | default "" -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Pod annotations that keep Karpenter (and so EKS Auto Mode) from disrupting the node voluntarily. */}}
+{{- define "proxy.disruptionAnnotations" -}}
+{{- if (.Values.karpenter | default dict).doNotDisrupt -}}
+karpenter.sh/do-not-disrupt: "true"
+{{- end -}}
+{{- end -}}
+
 {{/* OTel collector resource name. */}}
 {{- define "proxy.otelCollectorName" -}}
 {{- printf "%s-otel-collector" .Values.app.name -}}
