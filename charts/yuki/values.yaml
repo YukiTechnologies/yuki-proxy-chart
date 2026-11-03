@@ -10,6 +10,8 @@ app:
   shutdownTimeoutSeconds: 10
   # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
   drainFallbackSeconds: 45
+  # Shortest preStop even when nothing is in flight; covers the LB controller's deregistration lag.
+  drainMinHoldSeconds: 60
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.469
     port: 5162
