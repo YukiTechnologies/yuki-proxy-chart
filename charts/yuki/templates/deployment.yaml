@@ -248,16 +248,17 @@ spec:
                   - -c
                   - |
                     # Blocks until in-flight requests finish, so SIGTERM lands on an idle pod.
-                    # A failure still holds the pod, but only for the time the call did not already spend.
+                    # An idle pod drains in seconds, but the ALB keeps routing to it until the LB controller
+                    # deregisters it, so either outcome holds the pod for a minimum time counted from the start.
                     start=$(date +%s)
                     curl -fsS -X POST -m {{ add .Values.app.drainTimeoutSeconds 5 }} \
-                      http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain \
-                      || { left=$(( {{ .Values.app.drainFallbackSeconds }} - ($(date +%s) - start) )); \
-                           [ $left -gt 0 ] && sleep $left; exit 1; }
-                    # An idle pod drains in seconds, but the ALB keeps routing to it until the LB controller deregisters it.
-                    left=$(( {{ .Values.app.drainMinHoldSeconds }} - ($(date +%s) - start) ))
+                      http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain
+                    drained=$?
+                    [ $drained -eq 0 ] && hold={{ .Values.app.drainMinHoldSeconds }} \
+                      || hold={{ max (.Values.app.drainMinHoldSeconds | int) (.Values.app.drainFallbackSeconds | int) }}
+                    left=$(( hold - ($(date +%s) - start) ))
                     [ $left -gt 0 ] && sleep $left
-                    exit 0
+                    exit $drained
 
 {{- with .Values.fabric.sqlTranslator }}
 {{- if and $.Values.fabric.enabled .enabled }}
