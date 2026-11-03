@@ -254,7 +254,7 @@ spec:
                     curl -fsS -X POST -m {{ add .Values.app.drainTimeoutSeconds 5 }} \
                       http://127.0.0.1:{{ .Values.app.container.port }}/admin/drain
                     drained=$?
-                    [ $drained -eq 0 ] && hold={{ .Values.app.drainMinHoldSeconds }} \
+                    [ $drained -eq 0 ] && hold={{ .Values.app.drainMinHoldSeconds | int }} \
                       || hold={{ max (.Values.app.drainMinHoldSeconds | int) (.Values.app.drainFallbackSeconds | int) }}
                     left=$(( hold - ($(date +%s) - start) ))
                     [ $left -gt 0 ] && sleep $left
