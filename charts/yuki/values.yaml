@@ -2,14 +2,18 @@ app:
   name: 'yuki-proxy'
   group: default-app-group
   replicaCount: 4
-  # Must exceed drainTimeoutSeconds + 5s curl margin + shutdownTimeoutSeconds (see proxy.shutdown.validate).
-  terminationGracePeriodSeconds: 75
+  # Must exceed the preStop worst case + shutdownTimeoutSeconds (see proxy.shutdown.validate).
+  terminationGracePeriodSeconds: 90
   # preStop waits this long for in-flight requests; must cover the ALB's deregistration_delay.
   drainTimeoutSeconds: 45
   # Grace left for the app after SIGTERM; drain + shutdown must stay under the grace period.
   shutdownTimeoutSeconds: 10
   # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
   drainFallbackSeconds: 45
+  # Shortest preStop even when nothing is in flight. Must outlast the ALB health check dropping the pod
+  # once /health/ready returns 503 (~35s at 15s x 2); the LB controller's deregistration can lag far longer.
+  # Requests that land during the hold get a second drain, so the preStop can run to this + 10s.
+  drainMinHoldSeconds: 60
   container:
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.469
     port: 5162
