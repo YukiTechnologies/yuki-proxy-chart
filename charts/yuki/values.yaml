@@ -10,7 +10,8 @@ app:
   shutdownTimeoutSeconds: 10
   # Fallback hold if the drain call fails; matches the ALB drain window so a broken hook still covers it.
   drainFallbackSeconds: 45
-  # Shortest preStop even when nothing is in flight; covers the LB controller's deregistration lag.
+  # Shortest preStop even when nothing is in flight. Must outlast the ALB health check dropping the pod
+  # once /health/ready returns 503 (~35s at 15s x 2); the LB controller's deregistration can lag far longer.
   # Requests that land during the hold get a second drain, so the preStop can run to this + 10s.
   drainMinHoldSeconds: 60
   container:
