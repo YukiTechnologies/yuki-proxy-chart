@@ -105,15 +105,20 @@
 {{- end -}}
 {{- end -}}
 
+{{/* Time the preStop drain calls may take in total: one full drain (+5s curl margin), or the minimum hold
+     plus a 10s second drain (5s stable-zero window + 5s margin). */}}
+{{- define "proxy.preStop.drainBudget" -}}
+{{- max (add (.Values.app.drainTimeoutSeconds | int) 5) (add (.Values.app.drainMinHoldSeconds | int) 10) -}}
+{{- end -}}
+
 {{/* Fail the render if the shutdown budget cannot fit inside the pod's grace period. */}}
 {{- define "proxy.shutdown.validate" -}}
 {{- $grace := .Values.app.terminationGracePeriodSeconds | int -}}
-{{- $drain := .Values.app.drainTimeoutSeconds | int -}}
 {{- $shutdown := .Values.app.shutdownTimeoutSeconds | int -}}
-{{- /* preStop is whichever is longest: the drain call (+5s curl margin), the failure fallback, or the minimum hold. */ -}}
-{{- $preStop := max (add $drain 5) (.Values.app.drainFallbackSeconds | int) (.Values.app.drainMinHoldSeconds | int) -}}
+{{- /* preStop is whichever is longer: the drain calls or the failure fallback. */ -}}
+{{- $preStop := max (include "proxy.preStop.drainBudget" . | int) (.Values.app.drainFallbackSeconds | int) -}}
 {{- if ge (add $preStop $shutdown) $grace -}}
-{{- fail (printf "preStop worst case (%ds: max of drainTimeoutSeconds+5, drainFallbackSeconds and drainMinHoldSeconds) + app.shutdownTimeoutSeconds (%d) must be less than app.terminationGracePeriodSeconds (%d), or kubelet SIGKILLs the pod mid-drain." $preStop $shutdown $grace) -}}
+{{- fail (printf "preStop worst case (%ds: max of drainTimeoutSeconds+5, drainMinHoldSeconds+10 and drainFallbackSeconds) + app.shutdownTimeoutSeconds (%d) must be less than app.terminationGracePeriodSeconds (%d), or kubelet SIGKILLs the pod mid-drain." $preStop $shutdown $grace) -}}
 {{- end -}}
 {{- /* The two sidecar workloads have no drain endpoint, so they sleep out the LB window; leave them room to exit. */ -}}
 {{- if .Values.passthrough.enabled -}}
