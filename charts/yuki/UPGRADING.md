@@ -11,8 +11,9 @@ Duckling reads the Iceberg catalog with the token each query brings for its role
 - Each role gets its own DuckDB database in every pod, so `memoryLimit` is per role. Size
   `resources.limits.memory` for about roles x `memoryLimit`, plus Python and Arrow.
 
-**Impact:** ship with a Duckling image that has YU-3372 (terraform-infra `images.duckdb`)
-and the Go proxy. Older Duckling images can't attach the catalog with this init SQL.
+**Impact:** ship with a Duckling image that has YU-3372 (terraform-infra `images.duckdb`).
+Older Duckling images can't attach the catalog with this init SQL. Finish the Duckling
+rollout before the proxy sends catalog tokens: old pods read with the PAT, whatever the token.
 
 ## DuckDB engine runs Duckling (DuckDB v2)
 
