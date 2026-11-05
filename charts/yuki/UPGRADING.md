@@ -8,12 +8,16 @@ Duckling reads the Iceberg catalog with the token each query brings for its role
   Duckling fills in for each role's database.
 - `fabric.catalog.role` and `fabric.catalog.secret` are gone, with the `<app>-catalog`
   ExternalSecret and the proxy's `QUERY_FEDERATION_CATALOG_*` env.
-- Each role gets its own DuckDB database in every pod, so `memoryLimit` is per role. Size
-  `resources.limits.memory` for about roles x `memoryLimit`, plus Python and Arrow.
+- Each role gets its own DuckDB database in every pod, so `memoryLimit` and `threads` are per
+  role. Duckling doesn't cap roles: size the pod for the roles the proxy has PATs for (3 x for
+  EDS's 3 roles).
 
-**Impact:** ship with a Duckling image that has YU-3372 (terraform-infra `images.duckdb`).
-Older Duckling images can't attach the catalog with this init SQL. Finish the Duckling
-rollout before the proxy sends catalog tokens: old pods read with the PAT, whatever the token.
+**Impact:** roll out in this order:
+1. The Go proxy sending `X-Yuki-Catalog-Token` and `X-Yuki-Catalog-Role` (P9). Older Duckling
+   images ignore them and keep reading with the PAT.
+2. This chart together with a Duckling image that has YU-3372 (terraform-infra `images.duckdb`).
+   That Duckling refuses queries without the headers, and older images can't attach the catalog
+   with this init SQL.
 
 ## DuckDB engine runs Duckling (DuckDB v2)
 

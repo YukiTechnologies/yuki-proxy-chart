@@ -73,8 +73,8 @@ fabric:
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
       threads: 2
-      # Per role: each role gets its own database, so resources.limits.memory needs
-      # about roles x this, plus Python and Arrow.
+      # Per role: each role gets its own database, so size the pod for roles x this,
+      # plus Python and Arrow.
       memoryLimit: 1GB
       # Empty reuses the key already in the Secret, or mints one.
       apiKey: ""
