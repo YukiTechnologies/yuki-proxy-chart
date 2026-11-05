@@ -55,7 +55,7 @@ spec:
                 secretKeyRef:
                   name: {{ $duckdb.name }}-secret
                   key: api-key
-          {{- if (.Values.fabric.catalog | default dict).enabled }}
+          {{- if and (.Values.fabric.catalog | default dict).enabled (not $duckdb.catalogTokenPerRequest) }}
             - name: QUERY_FEDERATION_CATALOG_PAT
               valueFrom:
                 secretKeyRef:

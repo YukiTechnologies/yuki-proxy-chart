@@ -1,5 +1,20 @@
 # Upgrading
 
+## Duckling can read the catalog with each query's token (opt-in)
+
+`fabric.engines.duckdb.catalogTokenPerRequest: true` makes Duckling read the Iceberg
+catalog with the token each query brings for its role, instead of the PAT:
+
+- The init SQL's catalog secret becomes `TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}'`,
+  which Duckling fills in per role. Duckling no longer gets `QUERY_FEDERATION_CATALOG_PAT`.
+- Each role gets its own DuckDB database in every pod, so `memoryLimit` is per role. Size
+  `resources.limits.memory` for about roles x `memoryLimit`, plus Python and Arrow.
+
+**Impact:** turn it on only together with a Duckling image that has YU-3372 and the Go
+proxy sending the token. That Duckling refuses queries without a token (400), so the C#
+proxy's shadow stops reaching it; older Duckling images ignore the token and fail to
+attach the catalog. Default `false` changes nothing.
+
 ## DuckDB engine runs Duckling (DuckDB v2)
 
 `fabric.engines.duckdb` now deploys Duckling, the Python DuckDB v2 service from

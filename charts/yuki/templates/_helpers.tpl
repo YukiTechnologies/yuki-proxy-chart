@@ -15,7 +15,8 @@
 {{- $key -}}
 {{- end -}}
 
-{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once per pod at startup. Plain SQL: the
+{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once per pod, or once per role's database with
+     catalogTokenPerRequest. Plain SQL: the
      extensions are baked into the image, and the key and port are not DuckDB's concern.
      Hashed by the pod template, so it must contain no metadata. */}}
 {{- define "proxy.duckdb.initSql" -}}
@@ -42,10 +43,15 @@
 {{- if not $databases -}}
 {{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
 {{- end -}}
+{{- if $duckdb.catalogTokenPerRequest -}}
+{{- /* Duckling substitutes each request's catalog token, already scoped to its role. */ -}}
+{{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}');" -}}
+{{- else -}}
 {{- $role := required "fabric.catalog.role is required when the catalog is enabled" $catalog.role -}}
 {{- /* CLIENT_ID empty but present: the client requires it, the server rejects a value. */ -}}
 {{- $scope := replace "'" "''" (printf "session:role:%s" $role) -}}
 {{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, CLIENT_ID '', CLIENT_SECRET '${QUERY_FEDERATION_CATALOG_PAT}', OAUTH2_SERVER_URI '%s/v1/oauth/tokens', OAUTH2_SCOPE '%s');" $endpoint $scope -}}
+{{- end -}}
 {{- /* Each name is both a string literal and an identifier, so it is escaped as each.
        MAX_TABLE_STALENESS reuses table metadata instead of asking the catalog per query. */ -}}
 {{- range $database := $databases -}}
