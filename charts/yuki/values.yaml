@@ -81,13 +81,11 @@ fabric:
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
       threads: 2
-      # ~Half of resources.limits.memory; Python and Arrow need the rest. With
-      # catalogTokenPerRequest it is per role: each role gets its own database, so
-      # resources.limits.memory needs about roles x this, plus Python and Arrow.
+      # ~Half of resources.limits.memory; Python and Arrow need the rest.
+      # Per role with catalogTokenPerRequest.
       memoryLimit: 1GB
-      # Each query brings its role's catalog token (X-Yuki-Catalog-Token) instead of
-      # Duckling reading the catalog with the PAT. Needs a Duckling image with YU-3372,
-      # and a proxy that sends the token: the C# proxy doesn't.
+      # Read the catalog with each query's token, not the PAT. Needs a Duckling image
+      # with YU-3372 and the Go proxy; the C# proxy sends no token.
       catalogTokenPerRequest: false
       # Empty reuses the key already in the Secret, or mints one.
       apiKey: ""

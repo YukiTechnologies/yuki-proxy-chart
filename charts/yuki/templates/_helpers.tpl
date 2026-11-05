@@ -15,8 +15,7 @@
 {{- $key -}}
 {{- end -}}
 
-{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once per pod, or once per role's database with
-     catalogTokenPerRequest. Plain SQL: the
+{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once per pod at startup. Plain SQL: the
      extensions are baked into the image, and the key and port are not DuckDB's concern.
      Hashed by the pod template, so it must contain no metadata. */}}
 {{- define "proxy.duckdb.initSql" -}}
@@ -44,7 +43,7 @@
 {{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
 {{- end -}}
 {{- if $duckdb.catalogTokenPerRequest -}}
-{{- /* Duckling substitutes each request's catalog token, already scoped to its role. */ -}}
+{{- /* Duckling fills in each role's token. */ -}}
 {{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}');" -}}
 {{- else -}}
 {{- $role := required "fabric.catalog.role is required when the catalog is enabled" $catalog.role -}}
