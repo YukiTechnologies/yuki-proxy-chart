@@ -55,13 +55,6 @@ spec:
                 secretKeyRef:
                   name: {{ $duckdb.name }}-secret
                   key: api-key
-          {{- if and (.Values.fabric.catalog | default dict).enabled (not $duckdb.catalogTokenPerRequest) }}
-            - name: QUERY_FEDERATION_CATALOG_PAT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $.Values.app.name }}-catalog
-                  key: token
-          {{- end }}
           ports:
             # Duckling's fixed port; the Service maps $duckdb.port onto it.
             - containerPort: 9999

@@ -1,19 +1,18 @@
 # Upgrading
 
-## Duckling can read the catalog with each query's token (opt-in)
+## Duckling reads the catalog with each query's token
 
-`fabric.engines.duckdb.catalogTokenPerRequest: true` makes Duckling read the Iceberg
-catalog with the token each query brings for its role, instead of the PAT:
+Duckling reads the Iceberg catalog with the token each query brings for its role, not a PAT:
 
-- The init SQL's catalog secret becomes `TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}'`,
-  which Duckling fills in per role. Duckling no longer gets `QUERY_FEDERATION_CATALOG_PAT`.
+- The init SQL's catalog secret is `TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}'`, which
+  Duckling fills in for each role's database.
+- `fabric.catalog.role` and `fabric.catalog.secret` are gone, with the `<app>-catalog`
+  ExternalSecret and the proxy's `QUERY_FEDERATION_CATALOG_*` env.
 - Each role gets its own DuckDB database in every pod, so `memoryLimit` is per role. Size
   `resources.limits.memory` for about roles x `memoryLimit`, plus Python and Arrow.
 
-**Impact:** turn it on only together with a Duckling image that has YU-3372 and the Go
-proxy sending the token. That Duckling refuses queries without a token (400), so the C#
-proxy's shadow stops reaching it; older Duckling images ignore the token and fail to
-attach the catalog. Default `false` changes nothing.
+**Impact:** ship with a Duckling image that has YU-3372 (terraform-infra `images.duckdb`)
+and the Go proxy. Older Duckling images can't attach the catalog with this init SQL.
 
 ## DuckDB engine runs Duckling (DuckDB v2)
 

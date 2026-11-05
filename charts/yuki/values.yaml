@@ -59,16 +59,8 @@ fabric:
     enabled: false
     # Each is attached under its own name, so queries naming it resolve unchanged.
     databases: []
-    # Decides which tables the engines can see.
-    role: ""
     # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
     endpoint: ""
-    # Store name comes from externalSecrets.stores, so self-hosted can use its own.
-    # Read as an env var, so a rotated credential needs both workloads restarted.
-    secret: {}
-    #  store: default
-    #  key: remote/secret/name
-    #  property: token
   engines:
     duckdb:
       deploy: false
@@ -81,12 +73,9 @@ fabric:
       replicaCount: 3
       # Keep in step with resources.limits.cpu.
       threads: 2
-      # ~Half of resources.limits.memory; Python and Arrow need the rest.
-      # Per role with catalogTokenPerRequest.
+      # Per role: each role gets its own database, so resources.limits.memory needs
+      # about roles x this, plus Python and Arrow.
       memoryLimit: 1GB
-      # Read the catalog with each query's token, not the PAT. Needs a Duckling image
-      # with YU-3372 and the Go proxy; the C# proxy sends no token.
-      catalogTokenPerRequest: false
       # Empty reuses the key already in the Secret, or mints one.
       apiKey: ""
       serviceAccountName: yuki-duckdb-sa
