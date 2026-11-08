@@ -9,7 +9,8 @@ it from Secrets Manager, and both the proxy (`QUERY_FEDERATION_DUCKDB_API_KEY`) 
 
 **Impact:** with `fabric.engines.duckdb.deploy`, set `externalSecrets.enabled` and
 `fabric.engines.duckdb.apiKeySecret` (`store`, `key`, `property`), and create the secret first:
-until it syncs, new proxy and Duckling pods can't start. Rotating the key needs both restarted.
+until it syncs, new proxy and Duckling pods can't start. To rotate the key, wait for
+`<duckdb.name>-api-key` to sync it (hourly), then restart both.
 
 ## Duckling reads the catalog with each query's token
 
@@ -37,8 +38,8 @@ yuki-fabric/Duckling. Duckling replaces the DuckDB CLI + httpserver image. The
 chart no longer renders a `.duckdbrc`:
 
 - The Secret holds `init.sql` (plain SQL, mounted at `/etc/duckling/init.sql`)
-  and `api-key`. Duckling reads the key from the `DUCKLING_API_KEY` env, not
-  from the init SQL.
+  and `api-key` (now in `<duckdb.name>-api-key`, see above). Duckling reads the
+  key from the `DUCKLING_API_KEY` env, not from the init SQL.
 - Pods listen on 9999. The Service port (`fabric.engines.duckdb.port`) and the
   proxy's `QUERY_FEDERATION_DUCKDB_URL` are unchanged.
 - An init SQL error now fails the pod's startup. The old CLI only printed it.
