@@ -76,8 +76,12 @@ fabric:
       # Per role: each role gets its own database, so size the pod for roles x this,
       # plus Python and Arrow.
       memoryLimit: 1GB
-      # Empty reuses the key already in the Secret, or mints one.
-      apiKey: ""
+      # Secrets Manager secret with the key the proxy and Duckling share. Read as an env
+      # var, so a rotated key needs both workloads restarted.
+      apiKeySecret: {}
+      #  store: default   # a name in externalSecrets.stores
+      #  key: yuki-fabric/duckling-api-key/<namespace>
+      #  property: api-key
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
       resources:

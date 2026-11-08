@@ -1,5 +1,16 @@
 # Upgrading
 
+## Duckling's API key comes from an ExternalSecret
+
+The chart no longer mints Duckling's API key with `lookup` / `randAlphaNum`: under Argo CD `lookup`
+returns nothing, so every sync rotated the key. The `<duckdb.name>-api-key` ExternalSecret now syncs
+it from Secrets Manager, and both the proxy (`QUERY_FEDERATION_DUCKDB_API_KEY`) and Duckling
+(`DUCKLING_API_KEY`) read it. `fabric.engines.duckdb.apiKey` is gone.
+
+**Impact:** with `fabric.engines.duckdb.deploy`, set `externalSecrets.enabled` and
+`fabric.engines.duckdb.apiKeySecret` (`store`, `key`, `property`), and create the secret first:
+until it syncs, new proxy and Duckling pods can't start. Rotating the key needs both restarted.
+
 ## Duckling reads the catalog with each query's token
 
 Duckling reads the Iceberg catalog with the token each query brings for its role, not a PAT:

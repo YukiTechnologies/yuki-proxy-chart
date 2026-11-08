@@ -1,20 +1,3 @@
-{{/* DuckDB engine key: reuse the existing one so `helm upgrade` does not rotate it. */}}
-{{- define "proxy.duckdb.apiKey" -}}
-{{- $duckdb := .Values.fabric.engines.duckdb -}}
-{{- $key := $duckdb.apiKey -}}
-{{- if not $key -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace (printf "%s-secret" $duckdb.name) -}}
-{{- $data := dict -}}
-{{- if $existing }}{{ $data = ($existing.data | default dict) }}{{ end -}}
-{{- if hasKey $data "api-key" -}}
-{{- $key = index $data "api-key" | b64dec -}}
-{{- else -}}
-{{- $key = randAlphaNum 32 -}}
-{{- end -}}
-{{- end -}}
-{{- $key -}}
-{{- end -}}
-
 {{/* Duckling's init SQL (DUCKDB_INIT_FILE), run for each role's database. Plain SQL: the
      extensions are baked into the image, and the key and port are not DuckDB's concern.
      Hashed by the pod template, so it must contain no metadata. */}}
