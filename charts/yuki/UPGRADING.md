@@ -1,5 +1,15 @@
 # Upgrading
 
+## Catalog databases are optional
+
+Duckling gets the catalog endpoint as `DUCKLING_CATALOG_ENDPOINT` and attaches each database a
+query names (`X-Yuki-Catalog-Databases`, from the Go proxy) on that role's first query naming it.
+`fabric.catalog.databases` is now optional; each one listed is still attached up front.
+
+**Impact:** none for proxies that list their databases. Leaving the list out needs a Duckling image
+that reads the header (yuki-fabric#26) and a Go proxy that sends it (go-yuki-proxies#77);
+otherwise queries can't find their tables.
+
 ## Duckling reads the catalog with each query's token
 
 Duckling reads the Iceberg catalog with the token each query brings for its role, not a PAT:

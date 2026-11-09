@@ -57,7 +57,8 @@ fabric:
   # Iceberg REST catalog. Shared: it describes the data, not one engine.
   catalog:
     enabled: false
-    # Each is attached under its own name, so queries naming it resolve unchanged.
+    # Optional: Duckling attaches each database a query names on first use. Each listed here is
+    # attached up front, under its own name, so queries naming it resolve unchanged.
     databases: []
     # Defaults to PROXY_HOST; set only to reach the catalog elsewhere.
     endpoint: ""
