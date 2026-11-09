@@ -17,7 +17,7 @@ spec:
   template:
     metadata:
       annotations:
-        # Duckling reads it once at startup; roll pods when it changes.
+        # Read once at startup.
         checksum/config: {{ include "proxy.duckdb.initSql" . | sha256sum }}
       labels:
         app: {{ $duckdb.name }}
