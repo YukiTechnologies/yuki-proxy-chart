@@ -1,5 +1,16 @@
 # Upgrading
 
+## Duckling's API key is generated once
+
+The key is a `<duckdb.name>-api-key` Secret from an External Secrets `Password` generator, resolved
+once (`refreshInterval: "0"`), instead of a Helm `lookup` that returns nothing under Argo CD and so
+minted a new key on every sync. The proxy and Duckling both read it from that Secret;
+`<duckdb.name>-secret` keeps only `init.sql`, and `fabric.engines.duckdb.apiKey` is gone.
+
+**Impact:** needs the External Secrets generator CRDs (`passwords.generators.external-secrets.io`).
+The first sync rolls the proxy and Duckling once, with the new key. If the ExternalSecret is ever
+deleted, a new key is generated; restart both deployments then.
+
 ## Catalog databases are optional
 
 Duckling gets the catalog endpoint as `DUCKLING_CATALOG_ENDPOINT` and attaches each database a
