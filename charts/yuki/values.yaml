@@ -100,6 +100,8 @@ fabric:
     enabled: false
     image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-sql-translator:main-4707ccd
     port: 5215
+    # e.g. TRANSLATOR_REWRITES: "1"
+    env: {}
     resources:
       requests:
         memory: 128Mi
