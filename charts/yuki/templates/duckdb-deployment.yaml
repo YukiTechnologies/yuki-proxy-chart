@@ -17,8 +17,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Duckling reads both once at startup; roll pods when either changes.
-        checksum/config: {{ printf "%s\n%s" (include "proxy.duckdb.initSql" .) (include "proxy.duckdb.apiKey" .) | sha256sum }}
+        # Duckling reads it once at startup; roll pods when it changes.
+        checksum/config: {{ include "proxy.duckdb.initSql" . | sha256sum }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}
@@ -53,7 +53,7 @@ spec:
             - name: DUCKLING_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ $duckdb.name }}-secret
+                  name: {{ $duckdb.name }}-api-key
                   key: api-key
             {{- if (.Values.fabric.catalog | default dict).enabled }}
             - name: DUCKLING_CATALOG_ENDPOINT

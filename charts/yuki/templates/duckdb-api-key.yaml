@@ -1,0 +1,33 @@
+{{- if and .Values.fabric.enabled .Values.fabric.engines.duckdb.deploy }}
+{{- $name := printf "%s-api-key" .Values.fabric.engines.duckdb.name }}
+# Generated once by External Secrets and never refreshed, so a sync doesn't rotate it.
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: {{ $name }}
+spec:
+  length: 32
+  digits: 8
+  symbols: 0
+  noUpper: false
+  allowRepeat: true
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ $name }}
+spec:
+  refreshInterval: "0"
+  target:
+    name: {{ $name }}
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: {{ $name }}
+      rewrite:
+        - regexp:
+            source: "password"
+            target: "api-key"
+{{- end }}
