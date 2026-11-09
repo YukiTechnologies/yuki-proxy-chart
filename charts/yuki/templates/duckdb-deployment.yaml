@@ -55,6 +55,10 @@ spec:
                 secretKeyRef:
                   name: {{ $duckdb.name }}-secret
                   key: api-key
+            {{- if (.Values.fabric.catalog | default dict).enabled }}
+            - name: DUCKLING_CATALOG_ENDPOINT
+              value: {{ include "proxy.fabric.catalogEndpoint" . | quote }}
+            {{- end }}
           ports:
             # Duckling's fixed port; the Service maps $duckdb.port onto it.
             - containerPort: 9999

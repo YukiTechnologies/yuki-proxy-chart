@@ -30,16 +30,8 @@
   | join "\n" -}}
 {{- $catalog := .Values.fabric.catalog | default dict -}}
 {{- if $catalog.enabled -}}
-{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST))) -}}
-{{- $trimmed := trimSuffix "/" $host -}}
-{{- if not $trimmed -}}
-{{- fail "fabric.catalog.endpoint normalises to empty" -}}
-{{- end -}}
-{{- $endpoint := replace "'" "''" $trimmed -}}
+{{- $endpoint := replace "'" "''" (include "proxy.fabric.catalogEndpoint" .) -}}
 {{- $databases := $catalog.databases | default list -}}
-{{- if not $databases -}}
-{{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
-{{- end -}}
 {{- /* Duckling fills in each role's token. */ -}}
 {{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}');" -}}
 {{- /* Each name is both a string literal and an identifier, so it is escaped as each.
@@ -48,6 +40,20 @@
 {{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog, MAX_TABLE_STALENESS '60 seconds');" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
 {{- end -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "proxy.fabric.catalogEndpoint" -}}
+{{- $catalog := .Values.fabric.catalog | default dict -}}
+{{- $host := $catalog.endpoint -}}
+{{- if not $host -}}
+{{- $proxyHost := required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST -}}
+{{- $host = printf "%s/polaris/api/catalog" (trimSuffix "/" $proxyHost) -}}
+{{- end -}}
+{{- $trimmed := trimSuffix "/" $host -}}
+{{- if not $trimmed -}}
+{{- fail "fabric.catalog.endpoint normalises to empty" -}}
+{{- end -}}
+{{- $trimmed -}}
 {{- end -}}
 
 {{/* Validate fabric.enabled against the engines actually in use. */}}
@@ -62,12 +68,6 @@
 {{- $cfg := default dict $engine -}}
 {{- if or $cfg.deploy $cfg.env $cfg.envFromSecrets -}}
 {{- $inUse = append $inUse $name -}}
-{{- end -}}
-{{- end -}}
-{{- $catalog := $fabric.catalog | default dict -}}
-{{- if $catalog.enabled -}}
-{{- if not $catalog.databases -}}
-{{- fail "fabric.catalog.databases must list at least one database when the catalog is enabled" -}}
 {{- end -}}
 {{- end -}}
 {{- if and (not $fabric.enabled) (($fabric.sqlTranslator | default dict).enabled) -}}
