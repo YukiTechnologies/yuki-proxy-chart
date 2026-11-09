@@ -248,6 +248,13 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ .port }}
+          {{- with .env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key | quote }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
           {{- with .resources }}
           resources:
             {{- toYaml . | nindent 12 }}
