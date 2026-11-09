@@ -44,7 +44,11 @@
 
 {{- define "proxy.fabric.catalogEndpoint" -}}
 {{- $catalog := .Values.fabric.catalog | default dict -}}
-{{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST))) -}}
+{{- $host := $catalog.endpoint -}}
+{{- if not $host -}}
+{{- $proxyHost := required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST -}}
+{{- $host = printf "%s/polaris/api/catalog" (trimSuffix "/" $proxyHost) -}}
+{{- end -}}
 {{- $trimmed := trimSuffix "/" $host -}}
 {{- if not $trimmed -}}
 {{- fail "fabric.catalog.endpoint normalises to empty" -}}
