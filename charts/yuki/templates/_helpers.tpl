@@ -42,7 +42,6 @@
 {{- end -}}
 {{- end -}}
 
-{{/* The Iceberg REST catalog Duckling attaches databases from. */}}
 {{- define "proxy.fabric.catalogEndpoint" -}}
 {{- $catalog := .Values.fabric.catalog | default dict -}}
 {{- $host := $catalog.endpoint | default (printf "%s/polaris/api/catalog" (trimSuffix "/" (required "fabric.catalog.endpoint is required when PROXY_HOST is unset" (.Values.app.container.env).PROXY_HOST))) -}}
