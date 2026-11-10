@@ -15,7 +15,7 @@ app:
   # Requests that land during the hold get a second drain, so the preStop can run to this + 10s.
   drainMinHoldSeconds: 60
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.470
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.471
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
