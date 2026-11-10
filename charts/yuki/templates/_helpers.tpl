@@ -171,3 +171,26 @@ INGESTION_KEY
 {{- $acct := required "app.container.env.ACCOUNT_GUID is required when mcp.enabled" .Values.app.container.env.ACCOUNT_GUID -}}
 {{- printf "%s/yuki-mcp/%s" (include "mcp.envShort" .) $acct -}}
 {{- end -}}
+
+{{/* The label is supplied by the deployment, never derived here, so DNS and the settings secret stay in step with its source. */}}
+{{- define "mcpConnector.hostLabel" -}}
+{{- $label := required "mcpConnector.hostLabel is required when mcpConnector.enabled" .Values.mcpConnector.hostLabel -}}
+{{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $label) -}}
+{{- fail (printf "mcpConnector.hostLabel %q is not a lower-case DNS label of at most 63 chars" $label) -}}
+{{- end -}}
+{{- $label -}}
+{{- end -}}
+
+{{- define "mcpConnector.host" -}}
+{{- printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) (required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain) -}}
+{{- end -}}
+
+{{- define "mcpConnector.settingsSecretName" -}}
+{{- printf "%s/mcp-connector/%s" (include "mcp.envShort" .) (include "mcpConnector.hostLabel" .) -}}
+{{- end -}}
+
+{{/* ALB names are 32 chars max: 19 of the namespace, then the account id prefix keeps siblings apart. */}}
+{{- define "mcpConnector.loadBalancerName" -}}
+{{- $accountPrefix := .Values.app.container.env.ACCOUNT_GUID | replace "-" "" | trunc 8 -}}
+{{- printf "%s-%s-mcp" (.Values.namespace | trunc 19 | trimSuffix "-") $accountPrefix -}}
+{{- end -}}
