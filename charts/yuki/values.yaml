@@ -369,7 +369,13 @@ groundcover:
         cpu: 50m
         memory: 256Mi
 
-# yuki-mcp-connector: Snowflake sign-in MCP connector, one copy per customer. Gated, default off.
+# Two MCP servers ship in this chart; they are separate products, not versions of one another:
+#   mcp:          yuki-mcp, the Cortex MCP. Exposes Snowflake Cortex agents through a Yuki-managed
+#                 integration (Yuki OAuth client + system-api). Python, port 8000.
+#   mcpConnector: yuki-mcp-connector, the generic MCP for AI agents (Claude, Claude Code). Each user
+#                 signs in with their own Snowflake login; SQL tools route through the Yuki proxy,
+#                 other tools of a wrapped Snowflake MCP server pass through. Go, port 5170.
+# Both are gated and off by default.
 mcpConnector:
   enabled: false
   container:
@@ -396,7 +402,7 @@ mcpConnector:
     limits:
       memory: "256Mi"
 
-# MCP server — gated, default off; existing deployments are unchanged.
+# yuki-mcp (Cortex MCP); see the note above mcpConnector.
 mcp:
   enabled: false
   terminationGracePeriodSeconds: 75
