@@ -369,6 +369,33 @@ groundcover:
         cpu: 50m
         memory: 256Mi
 
+# yuki-mcp-connector: Snowflake sign-in MCP connector, one copy per customer. Gated, default off.
+mcpConnector:
+  enabled: false
+  container:
+    image: ""                  # set by the proxies-system appset: <ecrArn>/yuki-mcp-connector:<tag>
+  hostLabel: ""                # from ComputeManagement (the Claude card's MCP URL), never re-derived here
+  domain: ""                   # yukicomputing.com / yukistaging.com; the host is <hostLabel>.mcp.<domain>
+  snowflakeAccount: ""         # e.g. jsjvnsg-prod
+  yukiProxyHost: "http://yuki-proxy:5162"
+  replicas: 1
+  terminationGracePeriodSeconds: 75
+  # Keep under terminationGracePeriodSeconds and at least deregistrationDelaySeconds.
+  drainSleepSeconds: 45
+  deregistrationDelaySeconds: 45
+  serviceAccount:
+    roleArn: ""                # reads only {env}/mcp-connector/*
+  ingress:
+    className: alb
+    certificateArn: ""         # the *.mcp.<domain> cert in this region
+    annotations: {}            # extra ALB annotations, e.g. tags
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      memory: "256Mi"
+
 # MCP server — gated, default off; existing deployments are unchanged.
 mcp:
   enabled: false
