@@ -222,6 +222,10 @@ spec:
 
           lifecycle:
             preStop:
+              {{- if .Values.app.imageHasNoShell }}
+              sleep:
+                seconds: {{ .Values.app.drainMinHoldSeconds | int }}
+              {{- else }}
               exec:
                 command:
                   - /bin/sh
@@ -240,6 +244,7 @@ spec:
                       [ $left -gt 0 ] || exit 0
                       sleep $left
                     done
+              {{- end }}
 
 {{- with .Values.fabric.sqlTranslator }}
 {{- if and $.Values.fabric.enabled .enabled }}
