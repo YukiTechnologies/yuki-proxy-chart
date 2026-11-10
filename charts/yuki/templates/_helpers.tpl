@@ -193,7 +193,11 @@ INGESTION_KEY
 {{- end -}}
 
 {{- define "mcpConnector.host" -}}
-{{- $host := printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) (required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain) -}}
+{{- $domain := required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain -}}
+{{- if not (regexMatch "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$" $domain) -}}
+{{- fail (printf "mcpConnector.domain %q is not a lower-case DNS name" $domain) -}}
+{{- end -}}
+{{- $host := printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) $domain -}}
 {{- if gt (len $host) 253 -}}
 {{- fail (printf "mcpConnector host %q is longer than the 253-char DNS limit" $host) -}}
 {{- end -}}
