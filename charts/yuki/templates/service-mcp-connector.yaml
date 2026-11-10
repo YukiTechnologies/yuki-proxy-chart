@@ -1,0 +1,19 @@
+{{- if .Values.mcpConnector.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: yuki-mcp-connector
+  labels:
+    app.kubernetes.io/name: yuki-mcp-connector
+    app: yuki-mcp-connector
+    group: {{ .Values.app.group }}
+spec:
+  type: ClusterIP
+  selector:
+    app: yuki-mcp-connector
+  ports:
+    - name: http
+      port: 5170
+      targetPort: http
+      protocol: TCP
+{{- end }}

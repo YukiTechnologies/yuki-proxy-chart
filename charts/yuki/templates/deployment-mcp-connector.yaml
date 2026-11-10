@@ -1,0 +1,145 @@
+{{- if .Values.mcpConnector.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yuki-mcp-connector
+  labels:
+    app.kubernetes.io/name: yuki-mcp-connector
+    app.kubernetes.io/version: {{ .Release.Name }}-{{ .Release.Revision }}
+    app: yuki-mcp-connector
+    group: {{ .Values.app.group }}
+spec:
+  minReadySeconds: 10
+  replicas: {{ .Values.mcpConnector.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: yuki-mcp-connector
+  template:
+    metadata:
+      labels:
+        app: yuki-mcp-connector
+        group: {{ .Values.app.group }}
+    spec:
+      serviceAccountName: yuki-mcp-connector
+      terminationGracePeriodSeconds: {{ .Values.mcpConnector.terminationGracePeriodSeconds }}
+      affinity:
+        {{- with .Values.affinity.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        # Preferred only: a required rule leaves the pod Pending when the proxy's nodes are full.
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: {{ .Values.app.name }}
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: yuki-mcp-connector
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: yuki-mcp-connector
+          image: {{ required "mcpConnector.container.image is required when mcpConnector.enabled" .Values.mcpConnector.container.image }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: http
+              containerPort: 5170
+          env:
+            - name: PORT
+              value: "5170"
+            - name: PUBLIC_URL
+              value: "https://{{ include "mcpConnector.host" . }}"
+            - name: CONNECTOR_SETTINGS_SECRET
+              value: {{ include "mcpConnector.settingsSecretName" . | quote }}
+            - name: ACCOUNT_GUID
+              value: {{ required "app.container.env.ACCOUNT_GUID is required when mcpConnector.enabled" .Values.app.container.env.ACCOUNT_GUID | quote }}
+            {{- $snowflakeAccount := required "mcpConnector.snowflakeAccount is required when mcpConnector.enabled" .Values.mcpConnector.snowflakeAccount }}
+            - name: SNOWFLAKE_ACCOUNT
+              value: {{ $snowflakeAccount | quote }}
+            - name: SNOWFLAKE_HOST
+              value: "https://{{ $snowflakeAccount | replace "_" "-" }}.snowflakecomputing.com"
+            - name: YUKI_PROXY_HOST
+              value: {{ include "mcpConnector.yukiProxyHost" . | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.app.container.env.AWS_REGION | default "us-east-1" | quote }}
+            - name: REDIS_HOST
+              value: {{ required "app.container.env.REDIS_HOST is required when mcpConnector.enabled" .Values.app.container.env.REDIS_HOST | quote }}
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-connector-shared
+                  key: redis-user
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-connector-shared
+                  key: redis-password
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-connector-shared
+                  key: postgres-url
+            - name: PLATFORM_TOKEN_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-connector-shared
+                  key: platform-token-encryption-key
+          {{- with .Values.mcpConnector.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Outlive the ALB's deregistration window; the image has no shell, so no sleep binary either.
+              sleep:
+                seconds: {{ .Values.mcpConnector.drainSleepSeconds }}
+{{- end }}

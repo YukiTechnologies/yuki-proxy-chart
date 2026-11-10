@@ -111,6 +111,17 @@
 {{- fail (printf "mcp.drainSleepSeconds (%d) leaves under 15s to shut down before mcp.terminationGracePeriodSeconds (%d)." $mSleep $mGrace) -}}
 {{- end -}}
 {{- end -}}
+{{- if .Values.mcpConnector.enabled -}}
+{{- $cSleep := .Values.mcpConnector.drainSleepSeconds | int -}}
+{{- $cGrace := .Values.mcpConnector.terminationGracePeriodSeconds | int -}}
+{{- $cDereg := .Values.mcpConnector.deregistrationDelaySeconds | int -}}
+{{- if gt (add $cSleep 15) $cGrace -}}
+{{- fail (printf "mcpConnector.drainSleepSeconds (%d) leaves under 15s to shut down before mcpConnector.terminationGracePeriodSeconds (%d)." $cSleep $cGrace) -}}
+{{- end -}}
+{{- if lt $cSleep $cDereg -}}
+{{- fail (printf "mcpConnector.drainSleepSeconds (%d) is shorter than mcpConnector.deregistrationDelaySeconds (%d), so the ALB still routes to a stopping pod." $cSleep $cDereg) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/* OTel collector resource name. */}}
@@ -170,4 +181,39 @@ INGESTION_KEY
 {{- define "mcp.secretName" -}}
 {{- $acct := required "app.container.env.ACCOUNT_GUID is required when mcp.enabled" .Values.app.container.env.ACCOUNT_GUID -}}
 {{- printf "%s/yuki-mcp/%s" (include "mcp.envShort" .) $acct -}}
+{{- end -}}
+
+{{/* The label is supplied by the deployment, never derived here, so DNS and the settings secret stay in step with its source. */}}
+{{- define "mcpConnector.hostLabel" -}}
+{{- $label := required "mcpConnector.hostLabel is required when mcpConnector.enabled" .Values.mcpConnector.hostLabel -}}
+{{- if not (regexMatch "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$" $label) -}}
+{{- fail (printf "mcpConnector.hostLabel %q is not a lower-case DNS label of at most 63 chars" $label) -}}
+{{- end -}}
+{{- $label -}}
+{{- end -}}
+
+{{- define "mcpConnector.host" -}}
+{{- $domain := required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain -}}
+{{- if not (regexMatch "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$" $domain) -}}
+{{- fail (printf "mcpConnector.domain %q is not a lower-case DNS name" $domain) -}}
+{{- end -}}
+{{- $host := printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) $domain -}}
+{{- if gt (len $host) 253 -}}
+{{- fail (printf "mcpConnector host %q is longer than the 253-char DNS limit" $host) -}}
+{{- end -}}
+{{- $host -}}
+{{- end -}}
+
+{{- define "mcpConnector.yukiProxyHost" -}}
+{{- .Values.mcpConnector.yukiProxyHost | default (printf "http://%s:%v" .Values.app.name .Values.app.service.port) -}}
+{{- end -}}
+
+{{- define "mcpConnector.settingsSecretName" -}}
+{{- printf "%s/mcp-connector/%s" (include "mcp.envShort" .) (include "mcpConnector.hostLabel" .) -}}
+{{- end -}}
+
+{{/* ALB names are 32 chars max: 19 of the namespace, then the account id prefix keeps siblings apart. */}}
+{{- define "mcpConnector.loadBalancerName" -}}
+{{- $accountPrefix := .Values.app.container.env.ACCOUNT_GUID | replace "-" "" | trunc 8 -}}
+{{- printf "%s-%s-mcp" (.Values.namespace | trunc 19 | trimSuffix "-") $accountPrefix -}}
 {{- end -}}

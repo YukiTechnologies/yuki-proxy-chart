@@ -369,7 +369,38 @@ groundcover:
         cpu: 50m
         memory: 256Mi
 
-# MCP server — gated, default off; existing deployments are unchanged.
+# Two separate MCP servers, both gated and off by default:
+#   mcp:          yuki-mcp, the Cortex MCP.
+#   mcpConnector: yuki-mcp-connector, a generic MCP for AI agents. Users sign in with their own
+#                 Snowflake login, and SQL runs through the proxy.
+mcpConnector:
+  enabled: false
+  container:
+    image: ""                  # <registry>/yuki-mcp-connector:<tag>
+  hostLabel: ""                # supplied per deployment and only validated here; the host is <hostLabel>.mcp.<domain>
+  domain: ""
+  snowflakeAccount: ""         # <org>-<account>
+  yukiProxyHost: ""            # defaults to the proxy Service: http://<app.name>:<app.service.port>
+  replicas: 2
+  terminationGracePeriodSeconds: 75
+  # Checked at render: at least deregistrationDelaySeconds, and 15s under terminationGracePeriodSeconds.
+  drainSleepSeconds: 45
+  deregistrationDelaySeconds: 45
+  serviceAccount:
+    roleArn: ""                # IRSA role that can read the connector's settings secret
+  ingress:
+    className: alb
+    certificateArn: ""         # covers *.mcp.<domain>
+    wafAclArn: ""              # WAFv2 web ACL, e.g. a rate limit on the public sign-in routes
+    annotations: {}            # extra ALB annotations, e.g. tags
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      memory: "256Mi"
+
+# yuki-mcp, the Cortex MCP; see the note above mcpConnector.
 mcp:
   enabled: false
   terminationGracePeriodSeconds: 75
