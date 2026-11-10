@@ -15,6 +15,9 @@ metadata:
     alb.ingress.kubernetes.io/healthcheck-path: /health/live
     alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds={{ .Values.mcpConnector.deregistrationDelaySeconds }}
     external-dns.alpha.kubernetes.io/hostname: {{ $host | quote }}
+    {{- with .Values.mcpConnector.ingress.wafAclArn }}
+    alb.ingress.kubernetes.io/wafv2-acl-arn: {{ . | quote }}
+    {{- end }}
     {{- range $key, $value := .Values.mcpConnector.ingress.annotations }}
     {{ $key }}: {{ tpl (toString $value) $ | quote }}
     {{- end }}

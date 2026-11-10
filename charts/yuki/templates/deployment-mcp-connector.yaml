@@ -32,13 +32,22 @@ spec:
         nodeAffinity:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-        # Co-locate with the proxy so the Groundcover sensor (required onto app: yuki-proxy) covers it too.
+        # Preferred only: a required rule leaves the pod Pending when the proxy's nodes are full.
         podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: {{ .Values.app.name }}
-              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: {{ .Values.app.name }}
+                topologyKey: kubernetes.io/hostname
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: yuki-mcp-connector
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
@@ -78,7 +87,7 @@ spec:
             - name: SNOWFLAKE_HOST
               value: "https://{{ $snowflakeAccount | replace "_" "-" }}.snowflakecomputing.com"
             - name: YUKI_PROXY_HOST
-              value: {{ .Values.mcpConnector.yukiProxyHost | quote }}
+              value: {{ include "mcpConnector.yukiProxyHost" . | quote }}
             - name: AWS_REGION
               value: {{ .Values.app.container.env.AWS_REGION | default "us-east-1" | quote }}
             - name: REDIS_HOST

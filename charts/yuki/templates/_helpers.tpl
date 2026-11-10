@@ -111,6 +111,17 @@
 {{- fail (printf "mcp.drainSleepSeconds (%d) leaves under 15s to shut down before mcp.terminationGracePeriodSeconds (%d)." $mSleep $mGrace) -}}
 {{- end -}}
 {{- end -}}
+{{- if .Values.mcpConnector.enabled -}}
+{{- $cSleep := .Values.mcpConnector.drainSleepSeconds | int -}}
+{{- $cGrace := .Values.mcpConnector.terminationGracePeriodSeconds | int -}}
+{{- $cDereg := .Values.mcpConnector.deregistrationDelaySeconds | int -}}
+{{- if gt (add $cSleep 15) $cGrace -}}
+{{- fail (printf "mcpConnector.drainSleepSeconds (%d) leaves under 15s to shut down before mcpConnector.terminationGracePeriodSeconds (%d)." $cSleep $cGrace) -}}
+{{- end -}}
+{{- if lt $cSleep $cDereg -}}
+{{- fail (printf "mcpConnector.drainSleepSeconds (%d) is shorter than mcpConnector.deregistrationDelaySeconds (%d), so the ALB still routes to a stopping pod." $cSleep $cDereg) -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/* OTel collector resource name. */}}
@@ -182,7 +193,15 @@ INGESTION_KEY
 {{- end -}}
 
 {{- define "mcpConnector.host" -}}
-{{- printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) (required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain) -}}
+{{- $host := printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) (required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain) -}}
+{{- if gt (len $host) 253 -}}
+{{- fail (printf "mcpConnector host %q is longer than the 253-char DNS limit" $host) -}}
+{{- end -}}
+{{- $host -}}
+{{- end -}}
+
+{{- define "mcpConnector.yukiProxyHost" -}}
+{{- .Values.mcpConnector.yukiProxyHost | default (printf "http://%s:%v" .Values.app.name .Values.app.service.port) -}}
 {{- end -}}
 
 {{- define "mcpConnector.settingsSecretName" -}}

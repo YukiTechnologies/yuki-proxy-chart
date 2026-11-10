@@ -1,0 +1,15 @@
+{{- if and .Values.mcpConnector.enabled (gt (int .Values.mcpConnector.replicas) 1) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: yuki-mcp-connector
+  labels:
+    app.kubernetes.io/name: yuki-mcp-connector
+    app: yuki-mcp-connector
+    group: {{ .Values.app.group }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: yuki-mcp-connector
+{{- end }}

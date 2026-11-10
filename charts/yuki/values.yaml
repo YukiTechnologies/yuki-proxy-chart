@@ -380,10 +380,10 @@ mcpConnector:
   hostLabel: ""                # supplied per deployment and only validated here; the host is <hostLabel>.mcp.<domain>
   domain: ""
   snowflakeAccount: ""         # <org>-<account>
-  yukiProxyHost: "http://yuki-proxy:5162"
-  replicas: 1
+  yukiProxyHost: ""            # defaults to the proxy Service: http://<app.name>:<app.service.port>
+  replicas: 2
   terminationGracePeriodSeconds: 75
-  # Keep under terminationGracePeriodSeconds and at least deregistrationDelaySeconds.
+  # Checked at render: at least deregistrationDelaySeconds, and 15s under terminationGracePeriodSeconds.
   drainSleepSeconds: 45
   deregistrationDelaySeconds: 45
   serviceAccount:
@@ -391,6 +391,7 @@ mcpConnector:
   ingress:
     className: alb
     certificateArn: ""         # covers *.mcp.<domain>
+    wafAclArn: ""              # WAFv2 web ACL, e.g. a rate limit on the public sign-in routes
     annotations: {}            # extra ALB annotations, e.g. tags
   resources:
     requests:
