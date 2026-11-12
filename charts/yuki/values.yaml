@@ -72,7 +72,6 @@ fabric:
       replicaCount: 1
       # Keep in step with resources.limits.cpu.
       threads: 2
-      # The pod's, shared by every role; leave room for Python and Arrow.
       memoryLimit: 1GB
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
