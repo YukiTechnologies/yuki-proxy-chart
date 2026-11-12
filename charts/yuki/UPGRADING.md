@@ -1,5 +1,18 @@
 # Upgrading
 
+## Duckling shares one DuckDB between roles
+
+Duckling runs the init SQL once, at startup, and attaches each database for each role itself
+(yuki-fabric#36). The init SQL no longer holds a catalog secret or `ATTACH`es, and
+`fabric.catalog.databases` is gone. `threads` and `memoryLimit` are the pod's, not each role's,
+and `replicaCount` defaults to 1.
+
+**Impact:** ship with a Duckling image from yuki-fabric#36 or later (terraform-infra
+`images.duckdb`). That Duckling refuses to start on the old init SQL, and an older Duckling can't
+attach with this one: both leave DuckDB queries falling back to the warehouse. Fabric also needs a
+Go proxy that sends the role to the translator (go-yuki-proxies#95) and a translator that takes it.
+Drop `fabric.catalog.databases` from values. Size `memoryLimit` for the pod.
+
 ## Duckling's API key is generated once
 
 The key is a `<duckdb.name>-api-key` Secret from an External Secrets `Password` generator, resolved

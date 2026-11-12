@@ -1,6 +1,6 @@
-{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run for each role's database. Plain SQL: the
-     extensions are baked into the image, and the key and port are not DuckDB's concern.
-     Hashed by the pod template, so it must contain no metadata. */}}
+{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once at startup. No catalog secret or ATTACH:
+     Duckling attaches each database per role itself. Hashed by the pod template, so it must
+     contain no metadata. */}}
 {{- define "proxy.duckdb.initSql" -}}
 {{- $duckdb := .Values.fabric.engines.duckdb -}}
 {{- list
@@ -11,18 +11,6 @@
   (printf "SET memory_limit='%s';" (replace "'" "''" (required "fabric.engines.duckdb.memoryLimit is required" $duckdb.memoryLimit)))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain, VALIDATION 'none');"
   | join "\n" -}}
-{{- $catalog := .Values.fabric.catalog | default dict -}}
-{{- if $catalog.enabled -}}
-{{- $endpoint := replace "'" "''" (include "proxy.fabric.catalogEndpoint" .) -}}
-{{- $databases := $catalog.databases | default list -}}
-{{- /* Duckling fills in each role's token. */ -}}
-{{- printf "\nCREATE OR REPLACE SECRET catalog (TYPE ICEBERG, TOKEN '${QUERY_FEDERATION_CATALOG_TOKEN}');" -}}
-{{- /* Each name is both a string literal and an identifier, so it is escaped as each.
-       MAX_TABLE_STALENESS reuses table metadata instead of asking the catalog per query. */ -}}
-{{- range $database := $databases -}}
-{{- printf "\nATTACH '%s' AS %s (TYPE ICEBERG, ENDPOINT '%s', SECRET catalog, MAX_TABLE_STALENESS '60 seconds');" (replace "'" "''" $database) (printf "\"%s\"" (replace "\"" "\"\"" $database)) $endpoint -}}
-{{- end -}}
-{{- end -}}
 {{- end -}}
 
 {{- define "proxy.fabric.catalogEndpoint" -}}
