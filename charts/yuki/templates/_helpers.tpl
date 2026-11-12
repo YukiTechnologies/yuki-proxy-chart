@@ -1,6 +1,4 @@
-{{/* Duckling's init SQL (DUCKDB_INIT_FILE), run once at startup. No catalog secret or ATTACH:
-     Duckling attaches each database per role itself. Hashed by the pod template, so it must
-     contain no metadata. */}}
+{{/* Duckling's init SQL, run once at startup. Hashed by the pod template: no metadata. */}}
 {{- define "proxy.duckdb.initSql" -}}
 {{- $duckdb := .Values.fabric.engines.duckdb -}}
 {{- list

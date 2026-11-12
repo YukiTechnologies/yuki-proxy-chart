@@ -68,11 +68,11 @@ fabric:
       image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
       # Service port, which the proxy's QUERY_FEDERATION_DUCKDB_URL uses; pods listen on 9999.
       port: 80
-      # Each replica caches table metadata and files on its own: scale up, not out.
+      # Each replica caches on its own: scale up, not out.
       replicaCount: 1
       # Keep in step with resources.limits.cpu.
       threads: 2
-      # The pod's: every role shares one DuckDB. Leave room for Python and Arrow.
+      # The pod's, shared by every role; leave room for Python and Arrow.
       memoryLimit: 1GB
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
