@@ -12,6 +12,9 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    env:
+      # Org-level secret used by the shared security template (posts to #security-alerts).
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,7 +22,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.ECR_GITHUB_IAM_ROLE }}
+          # No ECR role variable exists for this repo; the shared CI role trusts every YukiTechnologies repo and can pull from ECR.
+          role-to-assume: arn:aws:iam::406122784773:role/GitHub-ci-runner-role
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: us-east-1
 
@@ -43,11 +47,9 @@ jobs:
           exit $rc
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
         uses: 8398a7/action-slack@v3
         with:
           status: failure
           fields: repo,workflow
-          author_name: Nightly image scan found fixable CVEs
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          author_name: Nightly image scan failed (fixable CVEs or scan error)
