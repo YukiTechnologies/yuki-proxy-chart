@@ -88,6 +88,10 @@ spec:
             {{- if .Values.fabric.enabled }}
             - name: QUERY_FEDERATION_ENABLED
               value: "true"
+            {{- if .Values.fabric.saveDifferingShadowRuns }}
+            - name: FABRIC_SAVE_DIFFERING_SHADOW_RUNS
+              value: "true"
+            {{- end }}
             {{- range $name, $engine := .Values.fabric.engines }}
             {{- $cfg := default dict $engine }}
             {{- if or $cfg.deploy $cfg.env $cfg.envFromSecrets }}

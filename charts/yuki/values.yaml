@@ -54,6 +54,8 @@ app:
 # QUERY_FEDERATION_<ENGINE>_<KEY>.
 fabric:
   enabled: false
+  # Go proxy only: saves a shadow run whose answers differ to QUERY_FEDERATION_SHADOW_RESULTS_BUCKET.
+  saveDifferingShadowRuns: false
   # Iceberg REST catalog. Shared: it describes the data, not one engine.
   catalog:
     enabled: false
