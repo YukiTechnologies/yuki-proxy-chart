@@ -86,12 +86,12 @@ spec:
                   name: redis-encryption-key
                   key: password
             {{- if .Values.fabric.enabled }}
-            - name: QUERY_FEDERATION_ENABLED
+            - name: FABRIC_ENABLED
               value: "true"
             {{- range $name, $engine := .Values.fabric.engines }}
             {{- $cfg := default dict $engine }}
             {{- if or $cfg.deploy $cfg.env $cfg.envFromSecrets }}
-            {{- $prefix := printf "QUERY_FEDERATION_%s" (upper $name) }}
+            {{- $prefix := printf "FABRIC_%s" (upper $name) }}
             {{- if and $cfg.deploy (eq $name "duckdb") }}
             - name: {{ $prefix }}_URL
               value: "http://{{ $cfg.name }}-svc.{{ $.Release.Namespace }}.svc.cluster.local:{{ $cfg.port }}"
@@ -116,7 +116,7 @@ spec:
             {{- end }}
             {{- with .Values.fabric.sqlTranslator }}
             {{- if .enabled }}
-            - name: QUERY_FEDERATION_TRANSLATOR_URL
+            - name: FABRIC_TRANSLATOR_URL
               value: "http://127.0.0.1:{{ .port }}"
             {{- end }}
             {{- end }}

@@ -51,7 +51,7 @@ app:
 
 # Optional query engines. An engine is used when this chart deploys it, or when it is
 # given a way to be reached: `env` / `envFromSecrets` become
-# QUERY_FEDERATION_<ENGINE>_<KEY>.
+# FABRIC_<ENGINE>_<KEY>.
 fabric:
   enabled: false
   # Iceberg REST catalog. Shared: it describes the data, not one engine.
@@ -66,7 +66,7 @@ fabric:
       # A Duckling image (yuki-fabric/Duckling, DuckDB v2). Pinned per environment by
       # terraform-infra (images.duckdb); the pre-Duckling httpserver images do not fit this chart.
       image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
-      # Service port, which the proxy's QUERY_FEDERATION_DUCKDB_URL uses; pods listen on 9999.
+      # Service port, which the proxy's FABRIC_DUCKDB_URL uses; pods listen on 9999.
       port: 80
       # Each replica caches on its own: scale up, not out.
       replicaCount: 1
