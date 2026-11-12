@@ -27,9 +27,9 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
-          version: v0.69.2
+          version: v0.76.2
 
       # ponytail: parses values.yaml; subchart images (groundcover, external-secrets, starrocks) are vendor-owned and skipped
       - name: Scan every image pinned in values.yaml
