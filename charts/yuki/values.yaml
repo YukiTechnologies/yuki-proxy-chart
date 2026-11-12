@@ -51,7 +51,7 @@ app:
 
 # Optional query engines. An engine is used when this chart deploys it, or when it is
 # given a way to be reached: `env` / `envFromSecrets` become
-# FABRIC_<ENGINE>_<KEY>, and QUERY_FEDERATION_<ENGINE>_<KEY> for ClientProxy.
+# FABRIC_<ENGINE>_<KEY>.
 fabric:
   enabled: false
   # Iceberg REST catalog. Shared: it describes the data, not one engine.
