@@ -73,6 +73,8 @@ fabric:
       # Keep in step with resources.limits.cpu.
       threads: 2
       memoryLimit: 1GB
+      # Spill cap; empty keeps DuckDB's default.
+      maxTempDirectorySize: ""
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
       resources:

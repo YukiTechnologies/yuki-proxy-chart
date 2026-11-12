@@ -5,7 +5,7 @@
 Duckling runs the init SQL once, at startup, and attaches each database for each role itself
 (yuki-fabric#36). The init SQL no longer holds a catalog secret or `ATTACH`es, and
 `fabric.catalog.databases` is gone. `threads` and `memoryLimit` are the pod's, not each role's,
-and `replicaCount` defaults to 1.
+and `replicaCount` defaults to 1. `maxTempDirectorySize` optionally caps spilling.
 
 **Impact:** ship with a Duckling image from yuki-fabric#36 or later (terraform-infra
 `images.duckdb`). That Duckling refuses to start on the old init SQL, and an older Duckling can't

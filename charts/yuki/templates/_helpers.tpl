@@ -9,6 +9,9 @@
   (printf "SET memory_limit='%s';" (replace "'" "''" (required "fabric.engines.duckdb.memoryLimit is required" $duckdb.memoryLimit)))
   "CREATE OR REPLACE SECRET secret (TYPE s3, PROVIDER credential_chain, VALIDATION 'none');"
   | join "\n" -}}
+{{- with $duckdb.maxTempDirectorySize }}
+{{- printf "\nSET max_temp_directory_size='%s';" (replace "'" "''" .) -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "proxy.fabric.catalogEndpoint" -}}
