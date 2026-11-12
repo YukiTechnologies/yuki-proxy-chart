@@ -12,9 +12,6 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    env:
-      # Org-level secret used by the shared security template (posts to #security-alerts).
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,10 +43,22 @@ jobs:
           done
           exit $rc
 
+      # SLACK_WEBHOOK_SECURITY_URL is the org-level secret the shared security template uses (#security-alerts).
+      # Secrets can't be read in `if:`, so check it here and pass it only to the Slack step.
+      - name: Check Slack webhook
+        id: slack
+        if: failure()
+        env:
+          HOOK: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
+        run: |
+          if [ -n "$HOOK" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"; else echo "::warning::SLACK_WEBHOOK_SECURITY_URL is not shared with this repo; skipping Slack"; fi
+
       - name: Notify Slack on failure
-        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        if: failure() && steps.slack.outputs.configured == 'true'
         uses: 8398a7/action-slack@v3
         with:
           status: failure
           fields: repo,workflow
           author_name: Nightly image scan failed (fixable CVEs or scan error)
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
