@@ -1,5 +1,15 @@
 # Upgrading
 
+## Fabric env is FABRIC_*
+
+With `fabric.enabled`, the proxy gets `FABRIC_ENABLED`, `FABRIC_TRANSLATOR_URL` and
+`FABRIC_<ENGINE>_<KEY>` instead of `QUERY_FEDERATION_*`. That is what the Go proxy reads
+(go-yuki-proxies#85). ClientProxy, which read the old names, no longer runs Fabric.
+
+**Impact:** ship together with a Go proxy image that has go-yuki-proxies#85. Older images see Fabric
+as off and run every query on Snowflake. The init SQL keeps `${QUERY_FEDERATION_CATALOG_TOKEN}`
+until every Duckling image fills in `${FABRIC_CATALOG_TOKEN}` (yuki-fabric#35).
+
 ## Duckling's API key is generated once
 
 The key is a `<duckdb.name>-api-key` Secret from an External Secrets `Password` generator, resolved
