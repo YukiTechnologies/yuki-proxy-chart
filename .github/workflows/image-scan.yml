@@ -19,7 +19,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.ECR_GITHUB_IAM_ROLE }}
+          # No ECR role variable exists for this repo; the shared CI role trusts every YukiTechnologies repo and can pull from ECR.
+          role-to-assume: arn:aws:iam::406122784773:role/GitHub-ci-runner-role
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: us-east-1
 
@@ -27,9 +28,9 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
-          version: v0.69.2
+          version: v0.76.2
 
       # ponytail: parses values.yaml; subchart images (groundcover, external-secrets, starrocks) are vendor-owned and skipped
       - name: Scan every image pinned in values.yaml
@@ -42,12 +43,22 @@ jobs:
           done
           exit $rc
 
-      - name: Notify Slack on failure
+      # SLACK_WEBHOOK_SECURITY_URL is the org-level secret the shared security template uses (#security-alerts).
+      # Secrets can't be read in `if:`, so check it here and pass it only to the Slack step.
+      - name: Check Slack webhook
+        id: slack
         if: failure()
+        env:
+          HOOK: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
+        run: |
+          if [ -n "$HOOK" ]; then echo "configured=true" >> "$GITHUB_OUTPUT"; else echo "::warning::SLACK_WEBHOOK_SECURITY_URL is not shared with this repo; skipping Slack"; fi
+
+      - name: Notify Slack on failure
+        if: failure() && steps.slack.outputs.configured == 'true'
         uses: 8398a7/action-slack@v3
         with:
           status: failure
           fields: repo,workflow
-          author_name: Nightly image scan found fixable CVEs
+          author_name: Nightly image scan failed (fixable CVEs or scan error)
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_SECURITY_URL }}
