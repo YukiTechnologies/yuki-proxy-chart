@@ -18,6 +18,9 @@ spec:
       labels:
         app: {{ .Values.app.name }}-passthrough
         group: {{ .Values.app.group }}
+      annotations:
+        # nginx.conf is a subPath mount copied at startup, so config changes need a rollout.
+        checksum/config: {{ include (print $.Template.BasePath "/passthrough-configmap.yaml") . | sha256sum }}
     spec:
       terminationGracePeriodSeconds: {{ .Values.passthrough.terminationGracePeriodSeconds }}
       securityContext:
