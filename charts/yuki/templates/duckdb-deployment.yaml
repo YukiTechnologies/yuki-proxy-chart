@@ -102,7 +102,7 @@ spec:
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
-            # A long query can stall /ping; restarting in place would drop Duckling with no surge.
+            # A liveness restart is in place, with no surge: give /ping slack when every CPU is busy.
             timeoutSeconds: 5
             failureThreshold: 6
 {{- end }}
