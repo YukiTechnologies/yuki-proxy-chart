@@ -30,6 +30,9 @@ spec:
       annotations:
         # Read once at startup.
         checksum/config: {{ include "proxy.duckdb.initSql" . | sha256sum }}
+        {{- with $duckdb.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}

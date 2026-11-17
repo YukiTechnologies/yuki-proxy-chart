@@ -79,6 +79,12 @@ fabric:
       minReadySeconds: 120
       terminationGracePeriodSeconds: 120
       preStopSleepSeconds: 10
+      # Node replacements evict delete-first, with no surge: keep Karpenter (drift, consolidation) off Duckling.
+      podAnnotations:
+        karpenter.sh/do-not-disrupt: "true"
+      podDisruptionBudget:
+        enabled: true
+        minAvailable: 1
       # Keep in step with resources.limits.cpu.
       threads: 2
       memoryLimit: 1GB

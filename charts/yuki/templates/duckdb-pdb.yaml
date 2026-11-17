@@ -1,0 +1,17 @@
+{{- if and .Values.fabric.enabled .Values.fabric.engines.duckdb.deploy .Values.fabric.engines.duckdb.podDisruptionBudget.enabled }}
+{{- $duckdb := .Values.fabric.engines.duckdb }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $duckdb.name }}
+  labels:
+    app.kubernetes.io/name: {{ $duckdb.name }}
+    app: {{ $duckdb.name }}
+    group: {{ .Values.app.group }}
+spec:
+  minAvailable: {{ $duckdb.podDisruptionBudget.minAvailable }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app: {{ $duckdb.name }}
+{{- end }}
