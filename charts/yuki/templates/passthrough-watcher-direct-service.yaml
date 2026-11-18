@@ -8,6 +8,10 @@ metadata:
     app: {{ .Values.app.name }}-passthrough
     group: {{ .Values.app.group }}
 spec:
+  # The ALB target-health readiness gate only turns true while the pods are ALB
+  # targets, which they are not during passthrough; requiring Ready here would
+  # keep the watcher from ever seeing a healthy proxy again.
+  publishNotReadyAddresses: true
   selector:
     app: {{ .Values.app.name }}
   ports:
