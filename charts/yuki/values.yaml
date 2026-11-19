@@ -70,6 +70,20 @@ fabric:
       port: 80
       # Each replica caches on its own: scale up, not out.
       replicaCount: 1
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 0
+      # The old pod keeps serving this long after the new one is Ready, so the new one warms on real queries.
+      minReadySeconds: 120
+      terminationGracePeriodSeconds: 120
+      preStopSleepSeconds: 10
+      podAnnotations: {}
+      # Opt-in, with karpenter.sh/do-not-disrupt, only on a node two Duckling pods can't share: else it pins that node.
+      podDisruptionBudget:
+        enabled: false
+        minAvailable: 1
       # Keep in step with resources.limits.cpu.
       threads: 2
       memoryLimit: 1GB

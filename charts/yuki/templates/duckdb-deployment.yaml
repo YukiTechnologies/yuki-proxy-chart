@@ -15,6 +15,13 @@ metadata:
     reloader.stakater.com/rollout-strategy: restart
 spec:
   replicas: {{ $duckdb.replicaCount }}
+  {{- with $duckdb.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $duckdb.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $duckdb.name }}
@@ -23,11 +30,17 @@ spec:
       annotations:
         # Read once at startup.
         checksum/config: {{ include "proxy.duckdb.initSql" . | sha256sum }}
+        {{- with $duckdb.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}
     spec:
       serviceAccountName: {{ $duckdb.serviceAccountName | default "default" }}
+      {{- with $duckdb.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       {{- with $duckdb.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -71,6 +84,12 @@ spec:
             - name: init-sql
               mountPath: /etc/duckling
               readOnly: true
+          {{- with $duckdb.preStopSleepSeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ . }}"]
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /ping
@@ -83,4 +102,7 @@ spec:
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
+            # A liveness restart is in place, with no surge: give /ping slack when every CPU is busy.
+            timeoutSeconds: 5
+            failureThreshold: 6
 {{- end }}
