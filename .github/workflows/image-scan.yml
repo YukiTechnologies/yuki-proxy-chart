@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 5 * * *'
   workflow_dispatch:
+  # PRs scan only the public images: the ECR role trusts main, not PR refs.
+  pull_request:
+    paths:
+      - charts/yuki/values.yaml
+      - .github/workflows/image-scan.yml
 
 permissions:
   id-token: write
@@ -17,6 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
+        if: github.event_name != 'pull_request'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.ECR_GITHUB_IAM_ROLE }}
@@ -24,30 +30,40 @@ jobs:
           aws-region: us-east-1
 
       - name: Log in to ECR
+        if: github.event_name != 'pull_request'
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Pinned by SHA: the v0.2.2 tag this used to name no longer exists, so every run failed at job setup.
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.2
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
         with:
-          version: v0.69.2
+          version: v0.76.2
 
       # ponytail: parses values.yaml; subchart images (groundcover, external-secrets, starrocks) are vendor-owned and skipped
       - name: Scan every image pinned in values.yaml
         run: |
           rc=0
           for i in $(grep -hoE '^\s+image: *[^ #"]+' charts/yuki/values.yaml | awk '{print $2}' | sort -u); do
+            if [[ "$GITHUB_EVENT_NAME" == pull_request && "$i" == *.dkr.ecr.* ]]; then
+              echo "Skipping $i on a PR (no ECR access)"
+              continue
+            fi
             echo "::group::$i"
-            trivy image -q --scanners vuln --ignore-unfixed --exit-code 1 "$i" || { rc=1; echo "::error::$i has fixable CVEs"; }
+            # Print every fixable finding; fail only on HIGH/CRITICAL. Upstream images often carry
+            # fixable MEDIUMs with no rebuilt release to move to, and an always-red check gets ignored.
+            trivy image -q --scanners vuln --ignore-unfixed "$i" || rc=1
+            trivy image -q --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 --format json -o /dev/null "$i" \
+              || { rc=1; echo "::error::$i has fixable HIGH/CRITICAL CVEs"; }
             echo "::endgroup::"
           done
           exit $rc
 
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && github.event_name != 'pull_request'
         uses: 8398a7/action-slack@v3
         with:
           status: failure
           fields: repo,workflow
-          author_name: Nightly image scan found fixable CVEs
+          author_name: Nightly image scan found fixable HIGH/CRITICAL CVEs
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
