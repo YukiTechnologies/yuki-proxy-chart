@@ -294,7 +294,7 @@ global:
 #   groundcover:
 #     envName: yuki-proxy-<customer>
 #   otlp:
-#     image: otel/opentelemetry-collector-k8s:0.161.0
+#     image: otel/opentelemetry-collector-k8s:0.165.0
 # global:
 #   groundcover_token: gcik_...
 # groundcover:
@@ -320,7 +320,7 @@ observability:
     envName: ""         # Groundcover env name; defaults to the release name
 
   otlp:
-    image: otel/opentelemetry-collector-k8s:0.161.0
+    image: otel/opentelemetry-collector-k8s:0.165.0
     replicaCount: 1
     grpcPort: 4317
     httpPort: 4318
