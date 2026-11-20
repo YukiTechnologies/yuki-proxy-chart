@@ -49,7 +49,11 @@ jobs:
               continue
             fi
             echo "::group::$i"
-            trivy image -q --scanners vuln --ignore-unfixed --exit-code 1 "$i" || { rc=1; echo "::error::$i has fixable CVEs"; }
+            # Print every fixable finding; fail only on HIGH/CRITICAL. Upstream images often carry
+            # fixable MEDIUMs with no rebuilt release to move to, and an always-red check gets ignored.
+            trivy image -q --scanners vuln --ignore-unfixed "$i" || rc=1
+            trivy image -q --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL --exit-code 1 --format json -o /dev/null "$i" \
+              || { rc=1; echo "::error::$i has fixable HIGH/CRITICAL CVEs"; }
             echo "::endgroup::"
           done
           exit $rc
@@ -60,6 +64,6 @@ jobs:
         with:
           status: failure
           fields: repo,workflow
-          author_name: Nightly image scan found fixable CVEs
+          author_name: Nightly image scan found fixable HIGH/CRITICAL CVEs
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
