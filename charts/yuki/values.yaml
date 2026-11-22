@@ -200,14 +200,16 @@ passthrough:
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
     behavior: {}
-  image: nginx:1.30-alpine
+  image: nginx:1.30.7-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
   # Polls app's own /health/passthrough; flips the proxy Service selector on failure.
   watcher:
     enabled: true
-    image: curlimages/curl:8.22.0
+    # watch.sh needs only sh + curl, which nginx:alpine ships; reusing passthrough's image leaves one fewer
+    # image to patch. curlimages/curl links Kerberos and is rebuilt only on curl releases (32 HIGH krb5 CVEs in 8.23.0).
+    image: nginx:1.30.7-alpine
     pollIntervalSeconds: 5
     failureThreshold: 3
     successThreshold: 3
@@ -294,7 +296,7 @@ global:
 #   groundcover:
 #     envName: yuki-proxy-<customer>
 #   otlp:
-#     image: otel/opentelemetry-collector-k8s:0.161.0
+#     image: otel/opentelemetry-collector-k8s:0.165.0
 # global:
 #   groundcover_token: gcik_...
 # groundcover:
@@ -320,7 +322,7 @@ observability:
     envName: ""         # Groundcover env name; defaults to the release name
 
   otlp:
-    image: otel/opentelemetry-collector-k8s:0.161.0
+    image: otel/opentelemetry-collector-k8s:0.165.0
     replicaCount: 1
     grpcPort: 4317
     httpPort: 4318
