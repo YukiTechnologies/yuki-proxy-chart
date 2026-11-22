@@ -38,8 +38,8 @@ data:
           add_header Content-Type text/plain;
         }
 
-        # ALB target-group health check — must answer directly, not fall through to Snowflake.
-        location = /health/live {
+        # ALB target-group health check (/health/ready on the proxy ingress) — must answer directly, not fall through to the upstream.
+        location ~ ^/health/(live|ready)$ {
           access_log off;
           return 200 "ok";
           add_header Content-Type text/plain;
