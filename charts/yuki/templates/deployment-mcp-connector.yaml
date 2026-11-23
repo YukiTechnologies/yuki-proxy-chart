@@ -1,4 +1,9 @@
 {{- if .Values.mcpConnector.enabled }}
+{{- $selfHosted := .Values.mcpConnector.selfHosted }}
+{{- $connectorSecret := "yuki-mcp-connector-shared" }}
+{{- if $selfHosted.enabled }}
+{{- $connectorSecret = required "mcpConnector.selfHosted.secretName is required when mcpConnector.selfHosted.enabled" $selfHosted.secretName }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,7 +30,9 @@ spec:
         app: yuki-mcp-connector
         group: {{ .Values.app.group }}
     spec:
+      {{- if not $selfHosted.enabled }}
       serviceAccountName: yuki-mcp-connector
+      {{- end }}
       terminationGracePeriodSeconds: {{ .Values.mcpConnector.terminationGracePeriodSeconds }}
       affinity:
         {{- with .Values.affinity.nodeAffinity }}
@@ -75,12 +82,28 @@ spec:
           env:
             - name: PORT
               value: "5170"
+            - name: YUKI_API_URL
+              value: {{ required "app.container.env.SYSTEM_HOST is required when mcpConnector.enabled" .Values.app.container.env.SYSTEM_HOST | quote }}
+            {{- if $selfHosted.enabled }}
+            - name: PUBLIC_URL
+              value: "https://{{ required "mcpConnector.selfHosted.host is required when mcpConnector.selfHosted.enabled" $selfHosted.host }}"
+            - name: CONNECTOR_SETTINGS_FILE
+              value: /etc/yuki-mcp-connector/settings.json
+            {{- else }}
             - name: PUBLIC_URL
               value: "https://{{ include "mcpConnector.host" . }}"
             - name: CONNECTOR_SETTINGS_SECRET
               value: {{ include "mcpConnector.settingsSecretName" . | quote }}
             - name: ACCOUNT_GUID
               value: {{ required "app.container.env.ACCOUNT_GUID is required when mcpConnector.enabled" .Values.app.container.env.ACCOUNT_GUID | quote }}
+            - name: AWS_REGION
+              value: {{ .Values.app.container.env.AWS_REGION | default "us-east-1" | quote }}
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: yuki-mcp-connector-shared
+                  key: postgres-url
+            {{- end }}
             {{- $snowflakeAccount := required "mcpConnector.snowflakeAccount is required when mcpConnector.enabled" .Values.mcpConnector.snowflakeAccount }}
             - name: SNOWFLAKE_ACCOUNT
               value: {{ $snowflakeAccount | quote }}
@@ -88,30 +111,29 @@ spec:
               value: "https://{{ $snowflakeAccount | replace "_" "-" }}.snowflakecomputing.com"
             - name: YUKI_PROXY_HOST
               value: {{ include "mcpConnector.yukiProxyHost" . | quote }}
-            - name: AWS_REGION
-              value: {{ .Values.app.container.env.AWS_REGION | default "us-east-1" | quote }}
             - name: REDIS_HOST
               value: {{ required "app.container.env.REDIS_HOST is required when mcpConnector.enabled" .Values.app.container.env.REDIS_HOST | quote }}
             - name: REDIS_USER
               valueFrom:
                 secretKeyRef:
-                  name: yuki-mcp-connector-shared
+                  name: {{ $connectorSecret }}
                   key: redis-user
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: yuki-mcp-connector-shared
+                  name: {{ $connectorSecret }}
                   key: redis-password
-            - name: POSTGRES_URL
-              valueFrom:
-                secretKeyRef:
-                  name: yuki-mcp-connector-shared
-                  key: postgres-url
             - name: PLATFORM_TOKEN_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
-                  name: yuki-mcp-connector-shared
+                  name: {{ $connectorSecret }}
                   key: platform-token-encryption-key
+          {{- if $selfHosted.enabled }}
+          volumeMounts:
+            - name: connector-settings
+              mountPath: /etc/yuki-mcp-connector
+              readOnly: true
+          {{- end }}
           {{- with .Values.mcpConnector.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -142,4 +164,13 @@ spec:
               # Outlive the ALB's deregistration window; the image has no shell, so no sleep binary either.
               sleep:
                 seconds: {{ .Values.mcpConnector.drainSleepSeconds }}
+      {{- if $selfHosted.enabled }}
+      volumes:
+        - name: connector-settings
+          secret:
+            secretName: {{ $connectorSecret }}
+            items:
+              - key: settings.json
+                path: settings.json
+      {{- end }}
 {{- end }}

@@ -400,6 +400,17 @@ mcpConnector:
       memory: "64Mi"
     limits:
       memory: "256Mi"
+  # The customer runs the connector next to their own proxy: its settings, token encryption key and
+  # Redis credentials come from their Secret, and the ingress is theirs (as with ingress.* above).
+  # Needs a connector image that reaches system-api (YUKI_API_URL), not the compute database.
+  selfHosted:
+    enabled: false
+    secretName: ""             # keys: settings.json, platform-token-encryption-key, redis-user, redis-password
+    host: ""                   # the address the connector answers on, as entered on the Claude card
+    ingress:
+      className: ""
+      annotations: {}
+      tlsSecretName: ""
 
 # yuki-mcp, the Cortex MCP; see the note above mcpConnector.
 mcp:
