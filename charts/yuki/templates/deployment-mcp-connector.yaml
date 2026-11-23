@@ -30,7 +30,9 @@ spec:
         app: yuki-mcp-connector
         group: {{ .Values.app.group }}
     spec:
-      {{- if not $selfHosted.enabled }}
+      {{- if $selfHosted.enabled }}
+      automountServiceAccountToken: false
+      {{- else }}
       serviceAccountName: yuki-mcp-connector
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.mcpConnector.terminationGracePeriodSeconds }}
@@ -86,7 +88,7 @@ spec:
               value: {{ required "app.container.env.SYSTEM_HOST is required when mcpConnector.enabled" .Values.app.container.env.SYSTEM_HOST | quote }}
             {{- if $selfHosted.enabled }}
             - name: PUBLIC_URL
-              value: "https://{{ required "mcpConnector.selfHosted.host is required when mcpConnector.selfHosted.enabled" $selfHosted.host }}"
+              value: "https://{{ include "mcpConnector.selfHostedHost" . }}"
             - name: CONNECTOR_SETTINGS_FILE
               value: /etc/yuki-mcp-connector/settings.json
             {{- else }}
@@ -118,11 +120,17 @@ spec:
                 secretKeyRef:
                   name: {{ $connectorSecret }}
                   key: redis-user
+                  {{- if $selfHosted.enabled }}
+                  optional: true
+                  {{- end }}
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $connectorSecret }}
                   key: redis-password
+                  {{- if $selfHosted.enabled }}
+                  optional: true
+                  {{- end }}
             - name: PLATFORM_TOKEN_ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:

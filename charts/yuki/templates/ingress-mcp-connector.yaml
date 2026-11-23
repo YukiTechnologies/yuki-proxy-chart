@@ -1,6 +1,6 @@
 {{- if and .Values.mcpConnector.enabled .Values.mcpConnector.selfHosted.enabled }}
 {{- $selfHosted := .Values.mcpConnector.selfHosted }}
-{{- $host := required "mcpConnector.selfHosted.host is required when mcpConnector.selfHosted.enabled" $selfHosted.host }}
+{{- $host := include "mcpConnector.selfHostedHost" . }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
