@@ -63,6 +63,12 @@ spec:
             - name: DUCKLING_CATALOG_ENDPOINT
               value: {{ include "proxy.fabric.catalogEndpoint" . | quote }}
             {{- end }}
+            {{- if $duckdb.pinnedReads }}
+            - name: REDIS_HOST
+              value: {{ required "app.container.env.REDIS_HOST is required when fabric.engines.duckdb.pinnedReads" .Values.app.container.env.REDIS_HOST | quote }}
+            - name: ACCOUNT_GUID
+              value: {{ required "app.container.env.ACCOUNT_GUID is required when fabric.engines.duckdb.pinnedReads" .Values.app.container.env.ACCOUNT_GUID | quote }}
+            {{- end }}
           ports:
             # Duckling's fixed port; the Service maps $duckdb.port onto it.
             - containerPort: 9999

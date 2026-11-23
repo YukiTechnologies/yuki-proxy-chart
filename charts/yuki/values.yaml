@@ -75,6 +75,7 @@ fabric:
       memoryLimit: 1GB
       # Spill cap; empty keeps DuckDB's default.
       maxTempDirectorySize: ""
+      pinnedReads: false
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
       resources:
