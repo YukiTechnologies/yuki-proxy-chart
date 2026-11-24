@@ -200,7 +200,7 @@ passthrough:
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
     behavior: {}
-  image: nginx:1.30.7-alpine
+  image: nginx:1.30.8-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
@@ -209,7 +209,7 @@ passthrough:
     enabled: true
     # watch.sh needs only sh + curl, which nginx:alpine ships; reusing passthrough's image leaves one fewer
     # image to patch. curlimages/curl links Kerberos and is rebuilt only on curl releases (32 HIGH krb5 CVEs in 8.23.0).
-    image: nginx:1.30.7-alpine
+    image: nginx:1.30.8-alpine
     pollIntervalSeconds: 5
     failureThreshold: 3
     successThreshold: 3
