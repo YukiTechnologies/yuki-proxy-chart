@@ -15,7 +15,7 @@ app:
   # Requests that land during the hold get a second drain, so the preStop can run to this + 10s.
   drainMinHoldSeconds: 60
   container:
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.478
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-proxy:0.0.484
     port: 5162
     env:
       ASPNETCORE_ENVIRONMENT: Prod
@@ -211,14 +211,16 @@ passthrough:
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
     behavior: {}
-  image: nginx:1.30-alpine
+  image: nginx:1.30.8-alpine
   # Must match app.service.port — the swapped Service's targetPort is fixed.
   # auto/forceProxy/forcePassthrough. Live-reloaded, no pod restart needed.
   mode: auto
   # Polls app's own /health/passthrough; flips the proxy Service selector on failure.
   watcher:
     enabled: true
-    image: curlimages/curl:8.22.0
+    # watch.sh needs only sh + curl, which nginx:alpine ships; reusing passthrough's image leaves one fewer
+    # image to patch. curlimages/curl links Kerberos and is rebuilt only on curl releases (32 HIGH krb5 CVEs in 8.23.0).
+    image: nginx:1.30.8-alpine
     pollIntervalSeconds: 5
     failureThreshold: 3
     successThreshold: 3
@@ -305,7 +307,7 @@ global:
 #   groundcover:
 #     envName: yuki-proxy-<customer>
 #   otlp:
-#     image: otel/opentelemetry-collector-k8s:0.161.0
+#     image: otel/opentelemetry-collector-k8s:0.165.0
 # global:
 #   groundcover_token: gcik_...
 # groundcover:
@@ -331,7 +333,7 @@ observability:
     envName: ""         # Groundcover env name; defaults to the release name
 
   otlp:
-    image: otel/opentelemetry-collector-k8s:0.161.0
+    image: otel/opentelemetry-collector-k8s:0.165.0
     replicaCount: 1
     grpcPort: 4317
     httpPort: 4318
@@ -386,7 +388,8 @@ groundcover:
 mcpConnector:
   enabled: false
   container:
-    image: ""                  # <registry>/yuki-mcp-connector:<tag>
+    # Hosted deployments override it; self-hosted ones run this pinned image.
+    image: "406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-mcp-connector:7fd7ef7"
   hostLabel: ""                # supplied per deployment and only validated here; the host is <hostLabel>.mcp.<domain>
   domain: ""
   snowflakeAccount: ""         # <org>-<account>
@@ -409,6 +412,25 @@ mcpConnector:
       memory: "64Mi"
     limits:
       memory: "256Mi"
+  # The customer runs the connector next to their own proxy: its settings, token encryption key and
+  # Redis credentials come from their Secret, and the ingress is theirs (as with ingress.* above).
+  # Needs a connector image that reaches system-api (YUKI_API_URL), not the compute database.
+  # The customer's AWS account must be allowed to pull the yuki-mcp-connector ECR repo, as with yuki-proxy.
+  selfHosted:
+    enabled: false
+    # Keys: settings.json, platform-token-encryption-key, and optionally redis-password and redis-user.
+    # A redis-user alone is ignored: the connector authenticates to Redis only with a password.
+    # settings.json, with its connector-api-key, is shown once on Yuki's Integrations screen when the
+    # connector is saved. The file is re-read every minute, so updating the Secret needs no restart.
+    secretName: ""
+    # A bare DNS name, as entered on the Claude card. It must be reachable from the internet: Claude
+    # connects from Anthropic's ranges (160.79.104.0/21, 153.61.208.0/20), and users' browsers open
+    # /authorize and /oauth/callback during sign-in, so an IP allowlist needs their egress IPs too.
+    host: ""
+    ingress:
+      className: ""
+      annotations: {}
+      tlsSecretName: ""
 
 # yuki-mcp, the Cortex MCP; see the note above mcpConnector.
 mcp:

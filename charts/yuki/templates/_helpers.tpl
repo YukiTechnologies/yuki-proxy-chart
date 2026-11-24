@@ -181,16 +181,26 @@ INGESTION_KEY
 {{- $label -}}
 {{- end -}}
 
+{{/* list "<values key>" <value>: the value back, or a failed render naming the key. */}}
+{{- define "mcpConnector.dnsName" -}}
+{{- $key := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if not (regexMatch "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$" $name) -}}
+{{- fail (printf "%s %q is not a lower-case DNS name (no scheme, port or path)" $key $name) -}}
+{{- end -}}
+{{- if gt (len $name) 253 -}}
+{{- fail (printf "%s %q is longer than the 253-char DNS limit" $key $name) -}}
+{{- end -}}
+{{- $name -}}
+{{- end -}}
+
 {{- define "mcpConnector.host" -}}
-{{- $domain := required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain -}}
-{{- if not (regexMatch "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$" $domain) -}}
-{{- fail (printf "mcpConnector.domain %q is not a lower-case DNS name" $domain) -}}
+{{- $domain := include "mcpConnector.dnsName" (list "mcpConnector.domain" (required "mcpConnector.domain is required when mcpConnector.enabled" .Values.mcpConnector.domain)) -}}
+{{- include "mcpConnector.dnsName" (list "mcpConnector host" (printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) $domain)) -}}
 {{- end -}}
-{{- $host := printf "%s.mcp.%s" (include "mcpConnector.hostLabel" .) $domain -}}
-{{- if gt (len $host) 253 -}}
-{{- fail (printf "mcpConnector host %q is longer than the 253-char DNS limit" $host) -}}
-{{- end -}}
-{{- $host -}}
+
+{{- define "mcpConnector.selfHostedHost" -}}
+{{- include "mcpConnector.dnsName" (list "mcpConnector.selfHosted.host" (required "mcpConnector.selfHosted.host is required when mcpConnector.selfHosted.enabled" .Values.mcpConnector.selfHosted.host)) -}}
 {{- end -}}
 
 {{- define "mcpConnector.yukiProxyHost" -}}
