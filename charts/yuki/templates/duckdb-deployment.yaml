@@ -30,9 +30,6 @@ spec:
       annotations:
         # Read once at startup.
         checksum/config: {{ include "proxy.duckdb.initSql" . | sha256sum }}
-        {{- with $duckdb.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
       labels:
         app: {{ $duckdb.name }}
         group: {{ .Values.app.group }}
@@ -76,6 +73,10 @@ spec:
             - name: DUCKLING_CATALOG_ENDPOINT
               value: {{ include "proxy.fabric.catalogEndpoint" . | quote }}
             {{- end }}
+            {{- if $duckdb.warmUpFromPeer }}
+            - name: DUCKLING_PEER_URL
+              value: "http://{{ $duckdb.name }}-svc:{{ $duckdb.port }}"
+            {{- end }}
           ports:
             # Duckling's fixed port; the Service maps $duckdb.port onto it.
             - containerPort: 9999
@@ -92,7 +93,7 @@ spec:
           {{- end }}
           readinessProbe:
             httpGet:
-              path: /ping
+              path: {{ if $duckdb.warmUpFromPeer }}/ready{{ else }}/ping{{ end }}
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10

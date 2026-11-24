@@ -79,11 +79,8 @@ fabric:
       minReadySeconds: 120
       terminationGracePeriodSeconds: 120
       preStopSleepSeconds: 10
-      podAnnotations: {}
-      # Opt-in, with karpenter.sh/do-not-disrupt, only on a node two Duckling pods can't share: else it pins that node.
-      podDisruptionBudget:
-        enabled: false
-        minAvailable: 1
+      # Ready only once it copied a serving pod's roles and tables; needs a Duckling image that serves /ready.
+      warmUpFromPeer: false
       # Keep in step with resources.limits.cpu.
       threads: 2
       memoryLimit: 1GB
