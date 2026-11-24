@@ -1,4 +1,37 @@
-{{- if .Values.mcpConnector.enabled }}
+{{- if and .Values.mcpConnector.enabled .Values.mcpConnector.selfHosted.enabled }}
+{{- $selfHosted := .Values.mcpConnector.selfHosted }}
+{{- $host := include "mcpConnector.selfHostedHost" . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: yuki-mcp-connector
+  {{- with $selfHosted.ingress.annotations }}
+  annotations:
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ tpl (toString $value) $ | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  {{- with $selfHosted.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with $selfHosted.ingress.tlsSecretName }}
+  tls:
+    - hosts: [{{ $host | quote }}]
+      secretName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: yuki-mcp-connector
+                port:
+                  number: 5170
+{{- else if .Values.mcpConnector.enabled }}
 {{- $host := include "mcpConnector.host" . }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
