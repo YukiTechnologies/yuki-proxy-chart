@@ -115,8 +115,8 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      # Bump terraform-infra's proxyChartVersion as part of main branch releases
-      - name: Generate GitHub App token for terraform-infra (main branch only)
+      # Bump gitops's proxyChartVersion as part of main branch releases
+      - name: Generate GitHub App token for gitops (main branch only)
         if: steps.version.outputs.is_main == 'true'
         id: generate-terraform-token
         uses: actions/create-github-app-token@v1
@@ -124,28 +124,28 @@ jobs:
           app-id: ${{ vars.YUKI_CI_APP_ID }}
           private-key: ${{ secrets.YUKI_CI_APP_PRIVATE_KEY }}
           repositories: |
-            terraform-infra
+            gitops
 
-      - name: Check out terraform-infra (main branch only)
+      - name: Check out gitops (main branch only)
         if: steps.version.outputs.is_main == 'true'
         uses: actions/checkout@v4
         with:
-          repository: YukiTechnologies/terraform-infra
+          repository: YukiTechnologies/gitops
           token: ${{ steps.generate-terraform-token.outputs.token }}
-          path: terraform-infra
+          path: gitops
 
-      - name: Update proxyChartVersion in terraform-infra (main branch only)
+      - name: Update proxyChartVersion in gitops (main branch only)
         if: steps.version.outputs.is_main == 'true'
-        working-directory: terraform-infra
+        working-directory: gitops
         run: |
           FILE="apps/charts/genesis/values/production/base.yaml"
           sed -i.bak "s/^proxyChartVersion: .*/proxyChartVersion: ${{ steps.bump.outputs.new_version }}/" "$FILE"
           rm "$FILE.bak"
           echo "Updated $FILE to proxyChartVersion: ${{ steps.bump.outputs.new_version }}"
 
-      - name: Commit and push change to terraform-infra main (main branch only)
+      - name: Commit and push change to gitops main (main branch only)
         if: steps.version.outputs.is_main == 'true'
-        working-directory: terraform-infra
+        working-directory: gitops
         env:
           GITHUB_TOKEN: ${{ steps.generate-terraform-token.outputs.token }}
         run: |
