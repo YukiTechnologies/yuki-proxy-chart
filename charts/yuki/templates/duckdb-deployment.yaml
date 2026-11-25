@@ -15,6 +15,13 @@ metadata:
     reloader.stakater.com/rollout-strategy: restart
 spec:
   replicas: {{ $duckdb.replicaCount }}
+  {{- with $duckdb.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $duckdb.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ $duckdb.name }}
@@ -28,6 +35,9 @@ spec:
         group: {{ .Values.app.group }}
     spec:
       serviceAccountName: {{ $duckdb.serviceAccountName | default "default" }}
+      {{- with $duckdb.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ . }}
+      {{- end }}
       {{- with $duckdb.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -63,6 +73,10 @@ spec:
             - name: DUCKLING_CATALOG_ENDPOINT
               value: {{ include "proxy.fabric.catalogEndpoint" . | quote }}
             {{- end }}
+            {{- if $duckdb.warmUpFromPeer }}
+            - name: DUCKLING_PEER_URL
+              value: "http://{{ $duckdb.name }}-svc:{{ $duckdb.port }}"
+            {{- end }}
             {{- if $duckdb.pinnedReads }}
             - name: REDIS_HOST
               value: {{ required "app.container.env.REDIS_HOST is required when fabric.engines.duckdb.pinnedReads" .Values.app.container.env.REDIS_HOST | quote }}
@@ -77,9 +91,15 @@ spec:
             - name: init-sql
               mountPath: /etc/duckling
               readOnly: true
+          {{- with $duckdb.preStopSleepSeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ . }}"]
+          {{- end }}
           readinessProbe:
             httpGet:
-              path: /ping
+              path: {{ if $duckdb.warmUpFromPeer }}/ready{{ else }}/ping{{ end }}
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
@@ -89,4 +109,7 @@ spec:
               port: duckdb-http
             initialDelaySeconds: 15
             periodSeconds: 10
+            # A liveness restart is in place, with no surge: give /ping slack when every CPU is busy.
+            timeoutSeconds: 5
+            failureThreshold: 6
 {{- end }}
