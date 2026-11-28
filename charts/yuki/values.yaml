@@ -65,7 +65,7 @@ fabric:
       name: yuki-duckdb
       # A Duckling image (yuki-fabric/Duckling, DuckDB v2). Pinned per environment by
       # terraform-infra (images.duckdb); the pre-Duckling httpserver images do not fit this chart.
-      image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/duckdb:duckpy1
+      image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-fabric-duckling:590dd64
       # Service port, which the proxy's FABRIC_DUCKDB_URL uses; pods listen on 9999.
       port: 80
       # Each replica caches on its own: scale up, not out.
@@ -86,6 +86,7 @@ fabric:
       memoryLimit: 1GB
       # Spill cap; empty keeps DuckDB's default.
       maxTempDirectorySize: ""
+      pinnedReads: false
       serviceAccountName: yuki-duckdb-sa
       roleARN: arn:aws:iam::406122784773:role/yuki-duckdb-role
       resources:
@@ -106,7 +107,7 @@ fabric:
   # Sidecar, reached over localhost.
   sqlTranslator:
     enabled: false
-    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-sql-translator:main-4707ccd
+    image: 406122784773.dkr.ecr.us-east-1.amazonaws.com/yuki-sql-translator:bd49681
     port: 5215
     env: {}
     resources:
